@@ -15,7 +15,7 @@ from tqdm import tqdm
 from factly.models import FactlyGptModel
 from factly.resources import ResourceManager
 
-logger = logging.getLogger("factly.benchmarks")
+logger = logging.getLogger(__name__)
 
 
 class MMLUBenchmark(MMLU):
@@ -28,10 +28,8 @@ class MMLUBenchmark(MMLU):
         confinement_instructions: str | None = None,
         **kwargs,
     ):
-        mmlu_tasks: list[MMLUTask] = list(MMLUTask) if tasks is None else tasks
-
         super().__init__(
-            tasks=mmlu_tasks,
+            tasks=tasks or list(MMLUTask),
             n_shots=n_shots,
             n_problems_per_task=n_problems_per_task,
             verbose_mode=verbose_mode,

@@ -7,10 +7,10 @@ from pathlib import Path
 
 import click
 import openai
-from deepeval.benchmarks.mmlu.task import MMLUTask
 from dotenv import load_dotenv
 
 from . import __copyright__, __version__
+from .tasks import list_available_tasks, resolve_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ def cli():
     type=str,
     default=None,
     multiple=True,
-    help="Comma-separated list of tasks to evaluate. Default is all tasks.",
+    help="List of tasks or categories to evaluate. Use 'factly list-tasks' to see available options.",
 )
 @click.option(
     "--verbose",
@@ -140,19 +140,39 @@ def evaluate(
     openai.api_key = os.getenv("OPENAI_API_KEY")
     openai.base_url = os.getenv("OPENAI_API_BASE")
 
-    # tasks = [MMLUTask.HIGH_SCHOOL_COMPUTER_SCIENCE, MMLUTask.ASTRONOMY]
-    tasks = [MMLUTask.ASTRONOMY]
+    try:
+        # Convert None to empty list to satisfy type checking
+        task_names = tasks if tasks is not None else []
 
-    do_evaluate(
-        instructions=instructions,
-        model=model,
-        tasks=tasks,
-        n_shots=n_shots,
-        workers=workers,
-        verbose=verbose,
-        plot=plot,
-        plot_path=plot_path,
-    )
+        # Resolve task names to actual MMLUTask objects
+        mmlu_tasks = resolve_tasks(task_names)
+
+        logger.info(
+            "Evaluating %d tasks: %s",
+            len(mmlu_tasks),
+            ", ".join([t.name for t in mmlu_tasks]),
+        )
+
+        do_evaluate(
+            instructions=instructions,
+            model=model,
+            tasks=mmlu_tasks,
+            n_shots=n_shots,
+            workers=workers,
+            verbose=verbose,
+            plot=plot,
+            plot_path=plot_path,
+        )
+    except ValueError as e:
+        logger.error("Error resolving tasks: %s", e)
+        logger.info("Use 'factly list-tasks' to see available tasks")
+        sys.exit(1)
+
+
+@cli.command("list-tasks")
+def list_tasks():
+    """List all available MMLU tasks for evaluation."""
+    click.echo(list_available_tasks())
 
 
 def main(args: list[str] | None = None) -> int:

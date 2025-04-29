@@ -38,7 +38,7 @@ cp .env.example .env
 ## Configuration
 
 1. **Environment Variables:** Configure your API keys and settings in the `.env` file:
-   ```
+   ```bash
    OPENAI_API_KEY=your_api_key_here
    OPENAI_MODEL=gpt-4o
    OPENAI_API_BASE=your_api_base_url # Optional, defaults to OpenAI's API base
