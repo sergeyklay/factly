@@ -7,7 +7,13 @@ CLI tool to evaluate ChatGPT factuality on MMLU benchmark.
 Run the factuality evaluation CLI:
 
 ```
-factly evaluate -j 20 --verbose
+factly evaluate
+```
+
+with plotting results:
+
+```
+factly evaluate --plot
 ```
 
 Use `--help` for all available options:
