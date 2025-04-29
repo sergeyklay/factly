@@ -1,0 +1,5 @@
+# Auto-detect text files, ensure they use LF.
+* text=auto eol=lf
+
+# Hooks for non-default diff hunk header
+.env.example diff=shell linguist-language=Shell

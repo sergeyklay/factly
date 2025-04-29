@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "factly"
+version = "0.1.0"
+description = "CLI tool to evaluate ChatGPT factuality on MMLU benchmark."
+requires-python = ">=3.12"
+dependencies = [
+    "click",
+    "datasets>=3.5.1",
+    "deepeval>=2.7.9",
+    "matplotlib>=3.10.1",
+    "pandas>=2.2.3",
+    "psutil>=7.0.0",
+    "python-dotenv>=1.1.0",
+    "pyyaml>=6.0.2",
+    "transformers>=4.51.3",
+]
+
+[project.scripts]
+factly = "factly.cli:cli"
+
+[dependency-groups]
+dev = ["ruff>=0.11.6"]
+testing = []
+
+[tool.uv.sources]
+# Mostly due to https://github.com/pallets/click/pull/2365
+click = { git = "https://github.com/pallets/click.git", rev = "release-8.2.0" }
+
+[tool.uv]
+default-groups = ["dev", "testing"]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-select = [
+    "I", # All imports
+    "E", # All errors
+    "W", # All warnings
+    "F", # All false positives
+    "C", # All complexity
+    "Q", # All quality
+]
+
+ignore = [
+    "E402", # module level import not at top of file
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["factly"]
