@@ -19,6 +19,26 @@ logger = logging.getLogger("factly.benchmarks")
 
 
 class MMLUBenchmark(MMLU):
+    def __init__(
+        self,
+        tasks: list[MMLUTask] | None = None,
+        n_shots: int = 0,
+        n_problems_per_task: int | None = None,
+        verbose_mode: bool = False,
+        confinement_instructions: str | None = None,
+        **kwargs,
+    ):
+        mmlu_tasks: list[MMLUTask] = list(MMLUTask) if tasks is None else tasks
+
+        super().__init__(
+            tasks=mmlu_tasks,
+            n_shots=n_shots,
+            n_problems_per_task=n_problems_per_task,
+            verbose_mode=verbose_mode,
+            confinement_instructions=confinement_instructions,
+            **kwargs,
+        )
+
     async def a_evaluate(
         self, model: FactlyGptModel, batch_size: int | None = None
     ) -> float:
@@ -63,12 +83,10 @@ class MMLUBenchmark(MMLU):
                     prediction_dict["score"],
                 )
 
-                if self.verbose_mode:
-                    # Add debug logs
-                    logger.info("Question: %s", golden.input)
-                    logger.info("Prediction: %s", prediction)
-                    logger.info("Expected: %s", golden.expected_output)
-                    logger.info("Score: %s", score)
+                logger.debug("Question: %s", golden.input)
+                logger.debug("Prediction: %s", prediction)
+                logger.debug("Expected: %s", golden.expected_output)
+                logger.debug("Score: %s", score)
 
                 task_results[task.value]["total"] += 1
                 overall_total_predictions += 1
@@ -110,42 +128,77 @@ class MMLUBenchmark(MMLU):
 
         return overall_accuracy
 
-    async def a_predict(
-        self, model: FactlyGptModel, task: MMLUTask, golden: Golden
-    ) -> dict:
-        if self.shots_dataset is None:
-            raise ValueError("Example dataset is empty. Call load_benchmark.")
+    async def _get_structured_prediction(
+        self, model: FactlyGptModel, prompt: str
+    ) -> str:
+        """Get a structured prediction from the model, with fallback to text.
 
-        # Define prompt template
-        prompt = MMLUTemplate.generate_output(
+        Returns a normalized string prediction.
+        """
+        try:
+            # Attempt to get a structured response
+            response, _ = await model.a_generate(
+                prompt=prompt,
+                schema=MultipleChoiceSchema,
+            )
+            return self._extract_answer(response)
+        except TypeError as e:
+            # Fall back to unstructured text completion
+            logger.warning("Structured output failed (%s), falling back to text", e)
+            constrained_prompt = f"{prompt}\n\n{self.confinement_instructions}"
+            text_response, _ = await model.a_generate(constrained_prompt)
+            return self._normalize_text_response(text_response)
+
+    def _extract_answer(self, response) -> str:
+        """Extract the answer from a structured response of various possible types."""
+        if isinstance(response, str):
+            return response
+        elif isinstance(response, dict) and "answer" in response:
+            return response["answer"]
+        elif isinstance(response, MultipleChoiceSchema):
+            return response.answer
+        else:
+            raise ValueError(
+                f"Unexpected response type: {type(response)}. "
+                "Cannot extract answer from response."
+            )
+
+    def _normalize_text_response(self, response) -> str:
+        """Normalize any text response to a valid string."""
+        if response is None:
+            return ""
+        return str(response)
+
+    def _create_prompt(self, task: MMLUTask, golden: Golden) -> str:
+        """Create a prompt from the template and question."""
+        return MMLUTemplate.generate_output(
             train_set=self.shots_dataset,
             input=golden.input,
             task=task,
             n_shots=self.n_shots,
         )
 
-        # Enforced model generation
+    async def a_predict(
+        self, model: FactlyGptModel, task: MMLUTask, golden: Golden
+    ) -> dict:
+        if self.shots_dataset is None:
+            raise RuntimeError("Example dataset is empty")
+
+        # Generate prompt from template
+        prompt = self._create_prompt(task, golden)
+
+        # Get prediction using the most appropriate method for this model
         try:
-            res, _ = await model.a_generate(prompt=prompt, schema=MultipleChoiceSchema)
-            if not isinstance(res, MultipleChoiceSchema):
-                raise ValueError(
-                    "Response does not have expected 'answer' attribute. "
-                    "Please use a better evaluation model."
-                )
-            prediction = res.answer
+            prediction = await self._get_structured_prediction(model, prompt)
         except TypeError:
             prompt += f"\n\n{self.confinement_instructions}"
-            prediction, _ = await model.a_generate(prompt)
+            prediction, _ = self._normalize_text_response(
+                await model.a_generate(prompt)
+            )
 
-        # For native models, shouldn't happen but just in case
-        if isinstance(prediction, tuple):
-            prediction = prediction[0]
-
-        # Ensure prediction is a string
-        prediction = str(prediction) if prediction is not None else ""
-
-        # Define Metric
+        # Score the prediction against the expected answer
         score = self.scorer.exact_match_score(golden.expected_output, prediction)
+
         return {"prediction": prediction, "score": score}
 
 
@@ -157,10 +210,17 @@ def load_instructions(path: Path) -> list[dict]:
 
 
 async def _evaluate_model(
-    factly_model: FactlyGptModel, mmlu_tasks: list[MMLUTask], n_shots: int = 0
+    factly_model: FactlyGptModel,
+    mmlu_tasks: list[MMLUTask] | None = None,
+    n_shots: int = 0,
+    verbose: bool = False,
 ) -> float:
     """Evaluate a single model and return its score."""
-    benchmark = MMLUBenchmark(tasks=mmlu_tasks, n_shots=n_shots)
+    benchmark = MMLUBenchmark(
+        tasks=mmlu_tasks,
+        n_shots=n_shots,
+        verbose_mode=verbose,
+    )
     score = await benchmark.a_evaluate(model=factly_model)
     return float(score) if score is not None else 0.0
 
@@ -168,7 +228,7 @@ async def _evaluate_model(
 async def _evaluate(
     instructions: Path,
     model: str,
-    mmlu_tasks: list[MMLUTask],
+    mmlu_tasks: list[MMLUTask] | None = None,
     n_shots: int = 0,
     workers: int | None = None,
     verbose: bool = False,
@@ -176,15 +236,11 @@ async def _evaluate(
     plot_path: Path | None = None,
 ) -> None:
     """Asynchronously evaluate models with different prompts on the MMLU benchmark."""
-    if not mmlu_tasks:
-        logger.warning("No MMLU tasks provided, terminating evaluation")
-        return
-
     loaded_instructions = load_instructions(instructions)
     logger.info(
-        "Evaluating %d prompts across %d MMLU tasks",
+        "Evaluating %d prompts across %s MMLU tasks",
         len(loaded_instructions),
-        len(mmlu_tasks),
+        len(mmlu_tasks) if mmlu_tasks else "all",
     )
 
     workers = workers or ResourceManager.get_optimal_workers(
@@ -211,7 +267,12 @@ async def _evaluate(
     async def run_evaluation(model_to_eval, tasks_to_run, idx):
         prompt_name = model_name_map[idx]
         async with semaphore:
-            score = await _evaluate_model(model_to_eval, tasks_to_run, n_shots)
+            score = await _evaluate_model(
+                model_to_eval,
+                tasks_to_run,
+                n_shots,
+                verbose,
+            )
             return score, idx, prompt_name
 
     tasks = [
@@ -264,7 +325,7 @@ def _configure_logging(verbose: bool = False):
 def evaluate(
     instructions: Path,
     model: str,
-    tasks: list[MMLUTask],
+    tasks: list[MMLUTask] | None = None,
     n_shots: int = 0,
     workers: int | None = None,
     verbose: bool = False,
