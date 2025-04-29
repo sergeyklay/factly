@@ -247,7 +247,7 @@ async def _evaluate(
         min_workers=2, max_workers=30
     )
     logger.info("Using %d concurrent workers for evaluation", workers)
-    logger.info("Model name: %s", model)
+    logger.info("Model name: %s\n", model)
 
     factly_models = []
     prompt_versions = {}
@@ -285,7 +285,7 @@ async def _evaluate(
         results.append((score, idx, name))
 
     results.sort(key=lambda x: x[1])
-    logger.info("Final Results:")
+    logger.info("\nFinal Results:")
     for score, _, name in results:
         logger.info("Prompt '%s': %.4f", name, score)
 

@@ -95,6 +95,13 @@ def cli():
     help="Number of shots for few-shot learning (default: 0).",
 )
 @click.option(
+    "--tasks",
+    type=str,
+    default=None,
+    multiple=True,
+    help="Comma-separated list of tasks to evaluate. Default is all tasks.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     help="Show detailed progress information during evaluation.",
@@ -122,6 +129,7 @@ def evaluate(
     model: str,
     n_shots: int,
     verbose: bool,
+    tasks: list[str] | None,
     workers: int | None = None,
     plot: bool = False,
     plot_path: Path | None = None,
