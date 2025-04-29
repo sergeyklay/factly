@@ -295,7 +295,16 @@ async def _evaluate(
         try:
             from factly.plots import generate_factuality_comparison_plot
 
-            plot_file = generate_factuality_comparison_plot(results, plot_path)
+            # Get task names for the plot footer
+            task_names = [task.name for task in mmlu_tasks] if mmlu_tasks else []
+
+            # Generate the plot with metadata, using the display model name
+            plot_file = generate_factuality_comparison_plot(
+                results=results,
+                model_name=factly_models[0].get_display_model_name(),
+                output_path=plot_path,
+                tasks=task_names,
+            )
             logger.info("Generated factuality comparison plot: %s", plot_file)
         except ImportError as e:
             logger.error("Failed to generate plot: %s", e)

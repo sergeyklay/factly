@@ -1,42 +1,43 @@
 """Plotting utilities for Factly benchmarks."""
 
+from datetime import datetime
 from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.figure import Figure
 
 
 def generate_factuality_comparison_plot(
-    results: list[tuple[float, int, str]], output_path: Path | None = None
+    results: list[tuple[float, int, str]],
+    model_name: str,
+    output_path: Path | None = None,
+    tasks: list[str] | None = None,
 ) -> Path:
     """Generate a bar chart comparing factuality scores of different prompts.
 
     Args:
         results: List of tuples containing (score, index, prompt_name)
+        model_name: Name of the LLM model used for the benchmark
         output_path: Path to save the plot (default: creates outputs dir in cwd)
+        tasks: List of MMLU task names used in the benchmark
 
     Returns:
         Path to the saved plot file
     """
-    # Ensure results are sorted by index for consistent ordering
     results.sort(key=lambda x: x[1])
 
-    # Extract data
-    scores = [score * 100 for score, _, _ in results]  # Convert to percentages
+    scores = [score * 100 for score, _, _ in results]
     labels = [name for _, _, name in results]
 
-    # Set up the plot
-    fig, ax = plt.subplots(figsize=(12, 8))
+    fig, ax = plt.subplots(figsize=(12, 9))
 
-    # Define colors for bars
     colors = ["#a5a5a5", "#5fb0d6", "#faa638"]
     if len(results) > len(colors):
         colors = plt.colormaps["tab10"](np.linspace(0, 1, len(results)))
 
-    # Create bars
     bars = ax.bar(labels, scores, color=colors[: len(results)])
 
-    # Add value labels on top of bars
     for bar in bars:
         height = bar.get_height()
         ax.text(
@@ -48,17 +49,22 @@ def generate_factuality_comparison_plot(
             fontsize=10,
         )
 
-    # Calculate and add delta labels for comparison if more than one prompt
     if len(results) > 1:
-        baseline_score = scores[0]  # Assuming first prompt is baseline
+        baseline_score = scores[0]
         for i, score in enumerate(scores[1:], 1):
             diff = score - baseline_score
-            diff_text = f"+{diff:.2f}% vs {labels[0]}"
+            if abs(diff) < 0.001:
+                diff_text = f"Same as {labels[0]}"
+            else:
+                diff_text = f"{'+' if diff >= 0 else ''}{diff:.2f}% vs {labels[0]}"
 
-            # If there's a previous custom prompt, also show comparison
             if i > 1:
                 prev_diff = score - scores[i - 1]
-                diff_text += f"\n+{prev_diff:.2f}% vs {labels[i - 1]}"
+                if abs(prev_diff) < 0.001:
+                    diff_text += f"\nSame as {labels[i - 1]}"
+                else:
+                    sign = "+" if prev_diff >= 0 else ""
+                    diff_text += f"\n{sign}{prev_diff:.2f}% vs {labels[i - 1]}"
 
             ax.text(
                 i,
@@ -66,28 +72,78 @@ def generate_factuality_comparison_plot(
                 diff_text,
                 ha="center",
                 va="bottom",
-                color="red" if diff > 0 else "blue",
+                color="red" if diff > 0 else ("green" if abs(diff) < 0.001 else "blue"),
                 fontsize=10,
             )
 
-    # Customize the plot
     ax.set_ylabel("Factuality (%)")
-    ax.set_title("Factuality Comparison of Custom Prompts over MMLU")
-    ax.set_ylim(80, 100)  # Set y-axis to start at 80% for better visualization
 
-    # Add grid lines for readability
+    ax.set_title("Factuality Comparison of Custom Prompts over MMLU")
+    ax.set_ylim(80, 100)
+
     ax.grid(axis="y", linestyle="--", alpha=0.7)
 
-    # Create output directory if it doesn't exist
+    plt.tight_layout(rect=(0, 0.04, 1, 1))
+
+    add_metadata_footer(
+        fig,
+        model_name=model_name,
+        tasks=tasks,
+    )
+
     if output_path is None:
         output_dir = Path.cwd() / "outputs"
         output_dir.mkdir(exist_ok=True)
-        output_path = output_dir / "factuality.png"
+        count_tasks = len(tasks) if tasks else "all"
+        output_path = output_dir / f"factuality-{model_name}-t{count_tasks}.png"
     else:
         output_path.parent.mkdir(exist_ok=True, parents=True)
 
-    # Save the plot
-    plt.tight_layout()
     plt.savefig(output_path, dpi=300)
 
     return output_path
+
+
+def add_metadata_footer(
+    fig: Figure,
+    model_name: str,
+    tasks: list[str] | None = None,
+) -> None:
+    """Add a metadata footer to the plot with date, model, and tasks information.
+
+    Args:
+        fig: The matplotlib figure to add footer to
+        model_name: Name of the model used for evaluation
+        tasks: List of task names used in the evaluation
+    """
+    current_date = datetime.now().strftime("%Y-%m-%d")
+
+    if tasks:
+        if len(tasks) > 5:
+            visible_tasks = []
+            for task in tasks[:5]:
+                visible_tasks.append(task)
+
+            tasks_text = ", ".join(visible_tasks)
+            remaining = len(tasks) - 5
+            tasks_text += f" ... (+{remaining})"
+        else:
+            tasks_text = ", ".join(tasks)
+    else:
+        tasks_text = "All tasks"
+
+    footer_text = (
+        f"Date: {current_date}   |   Model: {model_name}   |   Tasks: {tasks_text}"
+    )
+
+    fig.text(
+        0.5,
+        0.01,
+        footer_text,
+        ha="center",
+        va="bottom",
+        fontsize=7.5,
+        color="#333333",
+        family="sans-serif",
+        weight="normal",
+    )
