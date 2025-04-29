@@ -153,15 +153,15 @@ class MMLUBenchmark(MMLU):
         """Extract the answer from a structured response of various possible types."""
         if isinstance(response, str):
             return response
-        elif isinstance(response, dict) and "answer" in response:
+        if isinstance(response, dict) and "answer" in response:
             return response["answer"]
-        elif isinstance(response, MultipleChoiceSchema):
+        if isinstance(response, MultipleChoiceSchema):
             return response.answer
-        else:
-            raise ValueError(
-                f"Unexpected response type: {type(response)}. "
-                "Cannot extract answer from response."
-            )
+
+        raise ValueError(
+            f"Unexpected response type: {type(response)}. "
+            "Cannot extract answer from response."
+        )
 
     def _normalize_text_response(self, response) -> str:
         """Normalize any text response to a valid string."""
@@ -247,9 +247,10 @@ async def _evaluate(
         min_workers=2, max_workers=30
     )
     logger.info("Using %d concurrent workers for evaluation", workers)
+    logger.info("Model name: %s", model)
 
     factly_models = []
-    model_name_map = {}
+    prompt_versions = {}
 
     for idx, instruction in enumerate(loaded_instructions):
         model_instance = FactlyGptModel(
@@ -260,12 +261,11 @@ async def _evaluate(
             api_key=openai.api_key,
         )
         factly_models.append(model_instance)
-        model_name_map[idx] = instruction["name"]
+        prompt_versions[idx] = instruction["name"]
 
     semaphore = asyncio.Semaphore(workers)
 
     async def run_evaluation(model_to_eval, tasks_to_run, idx):
-        prompt_name = model_name_map[idx]
         async with semaphore:
             score = await _evaluate_model(
                 model_to_eval,
@@ -273,7 +273,7 @@ async def _evaluate(
                 n_shots,
                 verbose,
             )
-            return score, idx, prompt_name
+            return score, idx, prompt_versions[idx]
 
     tasks = [
         run_evaluation(model, mmlu_tasks, i) for i, model in enumerate(factly_models)
