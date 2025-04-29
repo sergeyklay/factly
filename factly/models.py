@@ -6,10 +6,8 @@ from deepeval.models.llms import GPTModel
 from deepeval.models.llms.openai_model import (
     json_mode_models,
     log_retry_error,
-    model_pricing,
     retryable_exceptions,
     structured_outputs_models,
-    valid_gpt_models,
 )
 from deepeval.models.llms.utils import trim_and_load_json
 from openai import AsyncOpenAI, OpenAI
@@ -26,50 +24,6 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
 
 
-FACTLY_MODELS = {
-    "openai/gpt-4o": {
-        "base_model": "gpt-4o",
-        "pricing": {"input": 2.50 / 1e6, "output": 10.00 / 1e6},
-    },
-    "openai/gpt-4.1": {
-        "base_model": "gpt-4.1",
-        "pricing": {"input": 2.00 / 1e6, "output": 8.00 / 1e6},
-    },
-    "openai/gpt-4.1-mini": {
-        "base_model": "gpt-4.1-mini",
-        "pricing": {"input": 0.4 / 1e6, "output": 1.60 / 1e6},
-    },
-    "openai/gpt-4.1-nano": {
-        "base_model": "gpt-4.1-nano",
-        "pricing": {"input": 0.1 / 1e6, "output": 0.4 / 1e6},
-    },
-}
-"""LiteLLM's OpenAI models with their pricing details."""
-
-
-def register_factly_models() -> None:
-    """Register Factly's custom models with DeepEval."""
-    for model_name, config in FACTLY_MODELS.items():
-        # Add pricing information
-        model_pricing[model_name] = model_pricing[config["base_model"]]
-
-        # Add to valid models
-        if model_name not in valid_gpt_models:
-            valid_gpt_models.append(model_name)
-
-        # Add to structured outputs models
-        if model_name not in structured_outputs_models:
-            structured_outputs_models.append(model_name)
-
-        # Add to JSON mode models
-        if model_name not in json_mode_models:
-            json_mode_models.append(model_name)
-
-
-# Register the models
-register_factly_models()
-
-
 class FactlyGptModel(GPTModel):
     """Factly GPT model."""
 
@@ -81,10 +35,19 @@ class FactlyGptModel(GPTModel):
         *args,
         **kwargs,
     ):
-        """Initialize the Factly GPT model."""
-        super().__init__(model, *args, **kwargs)
+        """Initialize the Factly GPT model.
 
-        self.model_name = model
+        Args:
+            model: Model identifier, can be "<provider>/<model>" for LiteLLM or
+                "<model>" for direct provider models
+            system_prompt: System prompt to use for generating responses
+            prompt_name: Display name for this model configuration in reports
+        """
+        actual_model_name = self._get_actual_model_name(model)
+        super().__init__(actual_model_name, *args, **kwargs)
+
+        self.model_name = model  # Redefine the model name
+        self.actual_model_name = actual_model_name
         self.system_prompt = system_prompt
         self.prompt_name = prompt_name
 
@@ -96,118 +59,79 @@ class FactlyGptModel(GPTModel):
         messages.append({"role": "user", "content": prompt})
         return messages
 
-    @retry(
-        wait=wait_exponential_jitter(initial=1, exp_base=2, jitter=2, max=10),
-        retry=retry_if_exception_type(retryable_exceptions),
-        after=log_retry_error,
-    )
-    def generate(
-        self, prompt: str, schema: BaseModel | None = None
-    ) -> tuple[Union[str, dict, BaseModel], float]:
-        """Generate a response from the model."""
-        messages = self._create_messages(prompt)
-        client = self.load_model(async_mode=False)
+    def _get_actual_model_name(self, model_name: str) -> str:
+        """Get the actual model name.
 
-        if schema:
-            if self.model_name in structured_outputs_models:
-                completion = client.beta.chat.completions.parse(
-                    model=self.model_name,
-                    messages=messages,
-                    response_format=schema,
-                )
-                structured_output: BaseModel = completion.choices[0].message.parsed
-                cost = self.calculate_cost(
-                    completion.usage.prompt_tokens,
-                    completion.usage.completion_tokens,
-                )
-                return structured_output, cost
+        Returns:
+            The actual model name
+        """
+        if "/" in model_name:
+            # For LiteLLM format "provider/model", extract just the model part
+            _, model_name = model_name.split("/", 1)
+            return model_name
+        # For direct provider models, return as is
+        return model_name
 
-            if self.model_name in json_mode_models:
-                completion = client.beta.chat.completions.parse(
-                    model=self.model_name,
-                    messages=messages,
-                    response_format={"type": "json_object"},
-                )
-                json_output = trim_and_load_json(completion.choices[0].message.content)
-                cost = self.calculate_cost(
-                    completion.usage.prompt_tokens,
-                    completion.usage.completion_tokens,
-                )
-                return schema.model_validate(json_output), cost
+    def get_display_model_name(self) -> str:
+        """Get the display model name.
 
-        completion = client.chat.completions.create(
-            model=self.model_name,
-            messages=messages,
-        )
-
-        output = completion.choices[0].message.content
-        cost = self.calculate_cost(
-            completion.usage.prompt_tokens,
-            completion.usage.completion_tokens,
-        )
-
-        if schema:
-            json_output = trim_and_load_json(output)
-            return schema.model_validate(json_output), cost
-        else:
-            return str(output), cost
+        Returns:
+            The display model name
+        """
+        return self.actual_model_name
 
     @retry(
         wait=wait_exponential_jitter(initial=1, exp_base=2, jitter=2, max=10),
         retry=retry_if_exception_type(retryable_exceptions),
         after=log_retry_error,
     )
-    async def a_generate(
+    async def ainvoke(
         self, prompt: str, schema: BaseModel | None = None
-    ) -> tuple[Union[str, dict, BaseModel], float]:
+    ) -> Union[str, dict, BaseModel]:
         """Generate a response from the model asynchronously."""
         messages = self._create_messages(prompt)
         client = self.load_model(async_mode=True)
 
         if schema:
-            if self.model_name in structured_outputs_models:
+            if self.actual_model_name in structured_outputs_models:
                 completion = await client.beta.chat.completions.parse(  # type: ignore
                     model=self.model_name,
                     messages=messages,
                     response_format=schema,
                 )
-                structured_output: BaseModel = completion.choices[0].message.parsed
-                cost = self.calculate_cost(
-                    completion.usage.prompt_tokens,
-                    completion.usage.completion_tokens,
-                )
-                return structured_output, cost
-            if self.model_name in json_mode_models:
+                return completion.choices[0].message.parsed
+
+            if self.actual_model_name in json_mode_models:
                 completion = await client.beta.chat.completions.parse(  # type: ignore
                     model=self.model_name,
                     messages=messages,
                     response_format={"type": "json_object"},
                 )
                 json_output = trim_and_load_json(completion.choices[0].message.content)
-                cost = self.calculate_cost(
-                    completion.usage.prompt_tokens,
-                    completion.usage.completion_tokens,
-                )
-                return schema.model_validate(json_output), cost
+                return schema.model_validate(json_output)
 
         completion = await client.chat.completions.create(  # type: ignore
             model=self.model_name,
             messages=messages,
         )
 
-        output = completion.choices[0].message.content
-        cost = self.calculate_cost(
-            completion.usage.prompt_tokens,
-            completion.usage.completion_tokens,
-        )
+        output = completion.choices[0].message.content or ""
 
         if schema:
             json_output = trim_and_load_json(output)
-            return schema.model_validate(json_output), cost
-        else:
-            return str(output), cost
+            return schema.model_validate(json_output)
+
+        return str(output)
 
     def load_model(self, async_mode: bool = False) -> Union[OpenAI, AsyncOpenAI]:
+        """Load the OpenAI client in sync or async mode.
+
+        Args:
+            async_mode: Whether to load the async client
+
+        Returns:
+            OpenAI client instance
+        """
         if not async_mode:
             return OpenAI(api_key=self._openai_api_key, base_url=self.base_url)
         return AsyncOpenAI(api_key=self._openai_api_key, base_url=self.base_url)

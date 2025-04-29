@@ -135,7 +135,7 @@ class MMLUBenchmark(MMLU):
         """
         try:
             # Attempt to get a structured response
-            response, _ = await model.a_generate(
+            response = await model.ainvoke(
                 prompt=prompt,
                 schema=MultipleChoiceSchema,
             )
@@ -144,8 +144,8 @@ class MMLUBenchmark(MMLU):
             # Fall back to unstructured text completion
             logger.warning("Structured output failed (%s), falling back to text", e)
             constrained_prompt = f"{prompt}\n\n{self.confinement_instructions}"
-            text_response, _ = await model.a_generate(constrained_prompt)
-            return self._normalize_text_response(text_response)
+            response = await model.ainvoke(constrained_prompt)
+            return self._normalize_text_response(response)
 
     def _extract_answer(self, response) -> str:
         """Extract the answer from a structured response of various possible types."""
@@ -190,12 +190,16 @@ class MMLUBenchmark(MMLU):
             prediction = await self._get_structured_prediction(model, prompt)
         except TypeError:
             prompt += f"\n\n{self.confinement_instructions}"
-            prediction, _ = self._normalize_text_response(
-                await model.a_generate(prompt)
-            )
+            prediction = self._normalize_text_response(await model.ainvoke(prompt))
+
+        # Ensure prediction is a string before scoring
+        prediction_str = str(prediction) if prediction is not None else ""
+        expected_str = (
+            str(golden.expected_output) if golden.expected_output is not None else ""
+        )
 
         # Score the prediction against the expected answer
-        score = self.scorer.exact_match_score(golden.expected_output, prediction)
+        score = self.scorer.exact_match_score(expected_str, prediction_str)
 
         return {"prediction": prediction, "score": score}
 
@@ -247,8 +251,8 @@ async def _evaluate(
     logger.info("Using %d concurrent workers for evaluation", workers)
     logger.info("Model name: %s\n", model)
 
-    factly_models = []
-    prompt_versions = {}
+    factly_models: list[FactlyGptModel] = []
+    prompt_versions: dict[int, str] = {}
 
     for idx, instruction in enumerate(loaded_instructions):
         model_instance = FactlyGptModel(
@@ -287,7 +291,7 @@ async def _evaluate(
     for score, _, name in results:
         logger.info("Prompt '%s': %.4f", name, score)
 
-    if plot:
+    if plot and len(results) > 0:
         try:
             from factly.plots import generate_factuality_comparison_plot
 

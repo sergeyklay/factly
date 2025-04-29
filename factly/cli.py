@@ -99,7 +99,10 @@ def cli():
     type=str,
     default=None,
     multiple=True,
-    help="List of tasks or categories to evaluate. Use 'factly list-tasks' to see available options.",
+    help=(
+        "List of tasks or categories to evaluate. "
+        "Use 'factly list-tasks' to see available options."
+    ),
 )
 @click.option(
     "--verbose",
@@ -122,7 +125,7 @@ def cli():
     "--plot-path",
     type=click.Path(dir_okay=False, path_type=Path),
     default=None,
-    help="Path to save the plot (default: ./outputs/factuality.png).",
+    help="Path to save the plot (default: ./outputs/factuality-model-tcount.png).",
 )
 def evaluate(
     instructions: Path,
