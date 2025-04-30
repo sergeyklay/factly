@@ -25,7 +25,8 @@ def generate_factuality_comparison_plot(
     Returns:
         Path to the saved plot file
     """
-    results.sort(key=lambda x: x[1])
+    # Sort ascending by score
+    results.sort(key=lambda x: x[0])
 
     scores = [score * 100 for score, _ in results]
     labels = [name for _, name in results]
