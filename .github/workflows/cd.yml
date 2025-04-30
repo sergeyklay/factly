@@ -1,0 +1,194 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build using Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    # The maximum number of minutes to let a workflow run
+    # before GitHub automatically cancels it. Default: 360
+    timeout-minutes: 30
+
+    strategy:
+      # When set to true, GitHub cancels
+      # all in-progress jobs if any matrix job fails.
+      fail-fast: false
+
+      matrix:
+        python:
+          - '3.12'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Install uv + Python ${{ matrix.python }}
+        id: setup-uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+          activate-environment: true
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --locked --no-default-groups
+
+      - name: Build source distribution
+        run: uv build
+
+      - name: Verify package
+        run: |
+          uv pip install twine
+          twine check dist/*
+          # Install the package and check version
+          uv pip install dist/*.whl
+          PKG_VERSION=$(python -c "import importlib.metadata; print(importlib.metadata.version('factly'))")
+          echo "Package version: $PKG_VERSION"
+          # Verify version is PyPI-compatible
+          if [[ "$PKG_VERSION" == *"+"* ]]; then
+            echo "Error: Version contains '+' which is not allowed by PyPI"
+            exit 1
+          fi
+          # Show version for verification
+          factly --version
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/factly-*.*
+          retention-days: 7
+
+  upload_test_pypi:
+    name: Upload to Test PyPI
+    runs-on: ubuntu-latest
+
+    needs: [build]
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    environment:
+      name: test-pypi
+      url: https://test.pypi.org/p/factly
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+          print-hash: true
+
+  upload_pypi:
+    name: Upload to PyPI
+    runs-on: ubuntu-latest
+
+    needs: [build]
+
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    environment:
+      name: production-pypi
+      url: https://pypi.org/p/factly
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+
+  upload_release_artifacts:
+    name: Upload release artifacts
+    runs-on: ubuntu-latest
+
+    needs: [build, upload_pypi]
+
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
+    environment:
+      name: github-releases
+      url: https://github.com/sergeyklay/factly/releases
+
+    permissions:
+      contents: write
+      checks: write
+
+      actions: read
+      issues: read
+      packages: write
+      pull-requests: read
+      repository-projects: read
+      statuses: read
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd dist
+
+          find . -type f -not -name "*.asc" -not -name "*SUMS*" -not -name "CHECKSUMS*" | sort | xargs sha256sum > SHA256SUMS
+          sed -i 's/\.\///g' SHA256SUMS
+
+          find . -type f -not -name "*.asc" -not -name "*SUMS*" -not -name "CHECKSUMS*" | sort | xargs sha512sum > SHA512SUMS
+          sed -i 's/\.\///g' SHA512SUMS
+
+          find . -type f -not -name "*.asc" -not -name "*SUMS*" -not -name "CHECKSUMS*" | sort | xargs md5sum > MD5SUMS
+          sed -i 's/\.\///g' MD5SUMS
+
+      - name: Verify checksums
+        run: |
+          cd dist
+
+          sha256sum -c SHA256SUMS
+          sha512sum -c SHA512SUMS
+          md5sum -c MD5SUMS
+
+      - name: Upload release artifacts
+        uses: alexellis/upload-assets@0.4.1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          asset_paths: '["./dist/*"]'
