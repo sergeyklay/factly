@@ -125,7 +125,7 @@ def cli():
     "--plot-path",
     type=click.Path(dir_okay=False, path_type=Path),
     default=None,
-    help="Path to save the plot (default: ./outputs/factuality-model-tcount.png).",
+    help="Path to save the plot (default: ./outputs/factuality-<model>-t<count>.png).",
 )
 def evaluate(
     instructions: Path,

@@ -187,9 +187,6 @@ class MMLUBenchmark(MMLU):
         """
         try:
             # Attempt to get a structured response
-            # We need to use the MultipleChoiceSchema class, but there's a type mismatch
-            # with the ainvoke method's schema parameter that expects a BaseModel instance.
-            # This is a limitation of the library's typing, not a real issue at runtime.
             response = await model.ainvoke(
                 prompt=prompt,
                 schema=MultipleChoiceSchema,  # type: ignore[arg-type]
@@ -204,6 +201,8 @@ class MMLUBenchmark(MMLU):
 
     def _extract_answer(self, response) -> str:
         """Extract the answer from a structured response of various possible types."""
+        if response is None:
+            return ""
         if isinstance(response, str):
             return response
         if isinstance(response, dict) and "answer" in response:
@@ -414,7 +413,8 @@ def evaluate(
                 (default: auto-determined based on system resources)
         verbose: Whether to print detailed progress information (default: False)
         plot: Whether to generate a plot of the results (default: False)
-        plot_path: Path to save the plot (default: ./outputs/factuality_comparison.png)
+        plot_path: Path to save the plot
+            (default: ./outputs/factuality-<model>-t<count>.png)
     """
     _configure_logging(verbose)
     asyncio.run(
