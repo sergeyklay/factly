@@ -1,12 +1,5 @@
 version: 2
 
-registries:
-  github:
-    type: git
-    url: https://github.com
-    username: x-access-token
-    password: ${{ secrets.CI_GITHUB_TOKEN }}
-
 updates:
   # Python dependencies
   - package-ecosystem: uv
@@ -29,8 +22,6 @@ updates:
     directory: '/'
     schedule:
       interval: daily
-    registries:
-      - github
     target-branch: main
     reviewers: [sergeyklay]
     assignees: [sergeyklay]
