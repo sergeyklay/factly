@@ -11,7 +11,7 @@ description = "CLI tool to evaluate ChatGPT factuality on MMLU benchmark."
 license = "MIT"
 license-files = ["LICENSE"]
 readme = "README.rst"
-version = "1.0.0"
+version = "1.0.1"
 requires-python = ">=3.12,<4"
 authors = [{ name = "Serghei Iakovlev", email = "oss@serghei.pl" }]
 dependencies = [
@@ -63,10 +63,12 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/sergeyklay/factly"
+Homepage = "https://factly.readthedocs.io"
 Repository = "https://github.com/sergeyklay/factly"
+Documentation = "https://factly.readthedocs.io/en/latest/index.html"
+Changelog = "https://factly.readthedocs.io/en/latest/changelog.html"
 Issues = "https://github.com/sergeyklay/factly/issues"
-
+Download = "https://github.com/sergeyklay/factly/releases"
 
 [project.scripts]
 factly = "factly.cli:cli"

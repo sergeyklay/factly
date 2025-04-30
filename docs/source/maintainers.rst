@@ -48,7 +48,7 @@ Clone the repository and install dependencies:
    # Edit .env with your API keys and configuration
 
    # Install dependencies with development tools
-   uv pip install -r pyproject.toml
+   uv sync --locked
 
 Testing the Project
 ===================
@@ -126,7 +126,7 @@ Install documentation dependencies:
 
 .. code-block:: bash
 
-   uv pip install -r pyproject.toml --no-default-groups --group docs
+   uv sync --locked --no-default-groups --group docs
 
 Build the documentation:
 
