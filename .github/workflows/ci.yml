@@ -46,7 +46,7 @@ jobs:
             **/uv.lock
 
       - name: Install dependencies
-        run: uv sync --locked --all-groups --all-packages
+        run: uv sync --locked --all-groups
 
       - name: Check code formatting
         run: make format-check
