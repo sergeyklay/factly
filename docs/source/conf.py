@@ -38,13 +38,13 @@ exclude_patterns: list[str] = []
 # In nitpick mode (-n), still ignore any of the following "broken" references
 # to non-types.
 nitpick_ignore = [
-    ("py:class", "np.float32"),
-    ("py:class", "np.int64"),
-    ("py:class", "np.ndarray"),
-    ("py:class", "numpy.bool_"),
-    ("py:class", "NDArray"),
-    ("py:class", "Axes"),
-    ("py:class", "SentenceTransformer"),
+    ("py:class", "click.core.Command"),
+    ("py:class", "deepeval.benchmarks.mmlu.task.MMLUTask"),
+    ("py:class", "pydantic.main.BaseModel"),
+    ("py:class", "openai.OpenAI"),
+    ("py:class", "openai.AsyncOpenAI"),
+    ("py:class", "matplotlib.figure.Figure"),
+    ("py:func", "factly.cli.main"),
 ]
 
 # -- Options for intersphinx -------------------------------------------------
