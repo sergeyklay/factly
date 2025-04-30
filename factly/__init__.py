@@ -1,6 +1,6 @@
 """CLI tool to evaluate ChatGPT factuality on MMLU benchmark."""
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 __description__ = "CLI tool to evaluate ChatGPT factuality on MMLU benchmark."
 __license__ = "MIT"
 __author__ = "Serghei Iakovlev"
