@@ -76,7 +76,7 @@ Usage
 The primary entrypoint is the ``factly`` command-line interface.
 
 Basic Evaluation
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -90,7 +90,7 @@ Basic Evaluation
    factly evaluate --help
 
 Advanced Options
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
@@ -101,7 +101,7 @@ Advanced Options
    factly evaluate --n-shots 3 --verbose
 
 Performance Optimization
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Factly uses asynchronous concurrent processing to maximize evaluation throughput.
 It evaluates multiple questions concurrently for each model, significantly reducing
@@ -126,7 +126,7 @@ The implementation uses ``asyncio`` and semaphores for controlled concurrency wi
 resource detection for optimal performance across different environments.
 
 Project Structure
-----------------
+-----------------
 
 - ``factly/`` - Main package directory containing core functionality
 - ``instructions.yaml`` - System prompts/instructions for LLM evaluation
@@ -134,7 +134,7 @@ Project Structure
 - ``.env`` - Local configuration (API keys, settings)
 
 Development
-----------
+-----------
 
 Setting up the development environment:
 
@@ -161,13 +161,13 @@ License
 This project is licensed under the MIT License - see the `LICENSE <LICENSE>`_ file for details.
 
 Acknowledgements
----------------
+----------------
 
 - `MMLU benchmark <https://github.com/hendrycks/test>`_ by Dan Hendrycks
 - `DeepEval <https://github.com/confident-ai/deepeval>`_ for evaluation framework
 - OpenAI, Anthropic, and other LLM providers
 
-.. -overview-end-
+.. -acknowledgements-end-
 
 .. |ci| image:: https://github.com/sergeyklay/factly/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/sergeyklay/factly/actions/workflows/ci.yml
