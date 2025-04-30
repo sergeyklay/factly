@@ -8,7 +8,8 @@ import numpy as np
 from matplotlib.figure import Figure
 
 
-def generate_factuality_comparison_plot(
+# TODO(serghei): Refactor this function to be more readable and maintainable.
+def generate_factuality_comparison_plot(  # noqa: C901
     results: list[tuple[float, str]],
     model_name: str,
     output_path: Path | None = None,

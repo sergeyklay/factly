@@ -64,7 +64,8 @@ class MMLUBenchmark(MMLU):
 
         Args:
             model: The model to evaluate
-            workers: Number of concurrent question evaluations (default: auto-determined)
+            workers: Number of concurrent question evaluations
+                (default: auto-determined)
 
         Returns:
             The overall accuracy score

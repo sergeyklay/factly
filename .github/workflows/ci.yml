@@ -48,6 +48,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --all-groups --all-packages
 
+      - name: Check code formatting
+        run: make format-check
+
+      - name: Run linter
+        run: make lint
+
       - name: Run unit tests with coverage
         run: |
           make test

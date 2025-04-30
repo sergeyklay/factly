@@ -114,7 +114,10 @@ def cli():
     "--workers",
     type=int,
     default=None,
-    help="Maximum number of concurrent question evaluations (auto-determined by default).",
+    help=(
+        "Maximum number of concurrent question evaluations. "
+        "(default: auto-determined by system resources)."
+    ),
 )
 @click.option(
     "--plot",
