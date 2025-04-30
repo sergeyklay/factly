@@ -64,7 +64,7 @@ jobs:
           twine check dist/*
           # Install the package and check version
           uv pip install dist/*.whl
-          PKG_VERSION=$(python -c "import importlib.metadata; print(importlib.metadata.version('factly'))")
+          PKG_VERSION=$(python -c "import importlib.metadata; print(importlib.metadata.version('factly-eval'))")
           echo "Package version: $PKG_VERSION"
           # Verify version is PyPI-compatible
           if [[ "$PKG_VERSION" == *"+"* ]]; then
