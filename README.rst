@@ -43,11 +43,11 @@ Quick Start
 
 That's it! The tool uses optimized default parameters and saves all outputs to the ``output`` directory.
 
-For more advanced usage, including saving results and evaluation, see the `Usage Guide <https://factly.readthedocs.io/en/latest/usage.html>`_.
+For more advanced usage, including saving results and evaluation, see the `Usage Guide <https://factly-eval.readthedocs.io/en/latest/usage.html>`_.
 
 .. note::
 
-   For detailed installation instructions, please see the `Installation Guide <https://factly.readthedocs.io/en/latest/installation.html>`_. And for usage instructions, use cases, examples, and advanced configuration options, please see the `Usage Guide <https://factly.readthedocs.io/en/latest/usage.html>`_.
+   For detailed installation instructions, please see the `Installation Guide <https://factly-eval.readthedocs.io/en/latest/installation.html>`_. And for usage instructions, use cases, examples, and advanced configuration options, please see the `Usage Guide <https://factly-eval.readthedocs.io/en/latest/usage.html>`_.
 
 .. -overview-end-
 
@@ -56,7 +56,7 @@ For more advanced usage, including saving results and evaluation, see the `Usage
 Project Information
 ===================
 
-Factly is released under the `MIT License <https://choosealicense.com/licenses/mit/>`_, its documentation lives at `Read the Docs <https://factly.readthedocs.io/>`_, the code on `GitHub <https://github.com/sergeyklay/factly>`_, and the latest release on `PyPI <https://pypi.org/project/factly/>`_. It's rigorously tested on Python 3.12+.
+Factly is released under the `MIT License <https://choosealicense.com/licenses/mit/>`_, its documentation lives at `Read the Docs <https://factly-eval.readthedocs.io/>`_, the code on `GitHub <https://github.com/sergeyklay/factly>`_, and the latest release on `PyPI <https://pypi.org/project/factly-eval/>`_. It's rigorously tested on Python 3.12+.
 
 If you'd like to contribute to Factly you're most welcome!
 
