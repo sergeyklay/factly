@@ -55,29 +55,35 @@ Command Line Options for ``evaluate``
    * - Option
      - Description
      - Default
-   * - ``--model TEXT``
-     - The OpenAI model to use for evaluation
-     - From ``.env`` or ``gpt-4o``
-   * - ``--tasks TEXT``
+   * - ``--instructions PATH``
+     - Path to YAML file with system instruction variants.
+     - ``./instructions.yaml``
+   * - ``-m NAME``, ``--model NAME``
+     - Model name to use for evaluation.
+     - ``OPENAI_MODEL`` from environment variables, ``.env`` file, or ``gpt-4o`` as a fallback.
+   * - ``-u URL``, ``--url URL``
+     - Model API URL to use for evaluation.
+     - ``OPENAI_API_BASE`` from environment variables, ``.env`` file, or unset.
+   * - ``-a KEY``, ``--api-key KEY``
+     - Model API key to use for evaluation.
+     - ``OPENAI_API_KEY`` from environment variables, ``.env`` file, or unset.
+   * - ``--tasks TEXT`` (repeatable)
      - MMLU task categories to evaluate (can be repeated)
      - All tasks
    * - ``--n-shots INTEGER``
      - Number of examples for few-shot learning
      - ``0``
    * - ``--workers INTEGER``
-     - Maximum number of concurrent API requests
+     - Maximum number of concurrent question evaluations
      - Auto-detected based on system resources
-   * - ``--instruction TEXT``
-     - Path to YAML file with system instruction variants.
-     - ``./instructions.yaml``
    * - ``--plot``
      - Generate visualization plots
      - -
-   * - ``--plot-path``
+   * - ``--plot-path PATH``
      - Path to save the plot
-     - ``./outputs/factuality-<model>-t<count>.png)``
+     - ``./outputs/factuality-<model>-t<count>.png``
    * - ``--verbose``
-     - Enable verbose output
+     - Show detailed progress information during evaluation
      - -
    * - ``--help``
      - Show help message and exit
@@ -204,8 +210,11 @@ Customized Evaluation
 .. code-block:: bash
 
    # Customize API settings and system instruction
-   export OPENAI_API_KEY=https://your-proxy.example.com/v1
-   factly evaluate --model gpt-4o-mini --instructions ~/path/to/instructions.yaml
+   factly evaluate \
+     -m gpt-4o-mini \
+     -u https://your-proxy.example.com/v1 \
+     -a your_api_key_here \
+     --instructions ~/path/to/instructions.yaml
 
 Environment Variables
 =====================
