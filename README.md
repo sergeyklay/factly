@@ -73,6 +73,30 @@ factly evaluate --model gpt-4o --tasks mathematics --tasks high_school_us_histor
 factly evaluate --n-shots 3 --verbose
 ```
 
+### Performance Optimization
+
+Factly uses asynchronous concurrent processing to maximize evaluation throughput.
+It evaluates multiple questions concurrently for each model, significantly reducing
+total evaluation time. You can control the concurrency level with the `--workers`
+parameter, which defaults to an automatically determined optimal value.
+
+#### Usage Examples
+
+```bash
+# Basic usage (auto-determines optimal concurrency)
+factly evaluate --tasks STEM --tasks BUSINESS
+
+# Set concurrency level explicitly (process 20 questions in parallel)
+factly evaluate --tasks STEM --workers 20
+
+# Compare performance with different concurrency levels
+factly evaluate --tasks STEM --workers 5
+factly evaluate --tasks STEM --workers 30
+```
+
+The implementation uses `asyncio` and semaphores for controlled concurrency with automatic
+resource detection for optimal performance across different environments.
+
 ## Project Structure
 
 - `factly/` - Main package directory containing core functionality

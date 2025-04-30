@@ -36,27 +36,49 @@ class MMLUBenchmark(MMLU):
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
+        # Initialize default concurrency context
+        self._concurrency_semaphore = asyncio.Semaphore(10)  # Default value
+
+    def set_concurrency(self, max_concurrent: int | None = None):
+        """Set the maximum number of concurrent question evaluations.
+
+        Args:
+            max_concurrent: Maximum number of concurrent question evaluations
+        """
+        # A sensible default for LLM API calls
+        default_concurrency = ResourceManager.get_optimal_workers(
+            min_workers=5, max_workers=20
+        )
+        concurrency = max_concurrent or default_concurrency
+        self._concurrency_semaphore = asyncio.Semaphore(concurrency)
+        logger.debug("Set evaluation concurrency to %d", concurrency)
+        return concurrency
 
     async def a_evaluate(
-        self, model: FactlyGptModel, batch_size: int | None = None
+        self, model: FactlyGptModel, workers: int | None = None
     ) -> float:
         """Evaluate a model on the MMLU benchmark with progress tracking.
 
         Overrides the base MMLU evaluate method to provide a cleaner evaluation
-        process with a single progress bar for all questions across all tasks.
+        process with parallel question processing for better performance.
+
+        Args:
+            model: The model to evaluate
+            workers: Number of concurrent question evaluations (default: auto-determined)
+
+        Returns:
+            The overall accuracy score
         """
-        if batch_size is not None:
-            raise NotImplementedError("Batch size is not supported for MMLU benchmark.")
+        # Set up concurrency control
+        concurrency = self.set_concurrency(workers)
+        logger.info("Processing questions with concurrency level: %d", concurrency)
 
-        overall_correct_predictions = 0
-        overall_total_predictions = 0
-        predictions_row = []
-        scores_row = []
-
+        # Collect all questions across all tasks
         total_questions = 0
         all_goldens = []
         all_tasks = []
 
+        # First, collect all questions across all tasks
         for task in self.tasks:
             goldens = self.load_benchmark_dataset(task)
             if self.n_problems_per_task is not None and self.n_problems_per_task < len(
@@ -68,49 +90,79 @@ class MMLUBenchmark(MMLU):
             all_goldens.extend(goldens)
             all_tasks.extend([task] * len(goldens))
 
-        with tqdm(total=total_questions, desc=model.prompt_name) as progress_bar:
-            task_results = {}
+        # Create progress tracking
+        progress_bar = tqdm(total=total_questions, desc=model.prompt_name)
 
-            for _, (task, golden) in enumerate(zip(all_tasks, all_goldens)):
-                if task.value not in task_results:
-                    task_results[task.value] = {"correct": 0, "total": 0}
-
-                prediction_dict = await self.a_predict(model, task, golden)
-                prediction, score = (
-                    prediction_dict["prediction"],
-                    prediction_dict["score"],
-                )
-
-                logger.debug("Question: %s", golden.input)
-                logger.debug("Prediction: %s", prediction)
-                logger.debug("Expected: %s", golden.expected_output)
-                logger.debug("Score: %s", score)
-
-                task_results[task.value]["total"] += 1
-                overall_total_predictions += 1
-
-                if score:
-                    task_results[task.value]["correct"] += 1
-                    overall_correct_predictions += 1
-
-                predictions_row.append(
-                    (
-                        task.value,
-                        golden.input,
-                        prediction,
-                        golden.expected_output,
-                        score,
-                    )
-                )
-
+        async def process_question(task, golden, idx):
+            """Process a single question with semaphore-controlled concurrency."""
+            async with self._concurrency_semaphore:
+                result = await self.a_predict(model, task, golden)
                 progress_bar.update(1)
+                return {
+                    "idx": idx,
+                    "task_value": task.value,
+                    "input": golden.input,
+                    "prediction": result["prediction"],
+                    "expected": golden.expected_output,
+                    "score": result["score"],
+                }
 
-            for task_name, results in task_results.items():
-                task_accuracy = results["correct"] / results["total"]
-                scores_row.append((task_name, task_accuracy))
+        # Launch all evaluation tasks
+        tasks = [
+            process_question(task, golden, i)
+            for i, (task, golden) in enumerate(zip(all_tasks, all_goldens))
+        ]
+
+        # Wait for all tasks to complete
+        results = await asyncio.gather(*tasks)
+
+        # Close the progress bar
+        progress_bar.close()
+
+        # Process results
+        task_results = {}
+        predictions_row = []
+        scores_row = []
+        overall_correct_predictions = 0
+        overall_total_predictions = 0
+
+        for result in results:
+            task_value = result["task_value"]
+
+            if task_value not in task_results:
+                task_results[task_value] = {"correct": 0, "total": 0}
+
+            task_results[task_value]["total"] += 1
+            overall_total_predictions += 1
+
+            if result["score"]:
+                task_results[task_value]["correct"] += 1
+                overall_correct_predictions += 1
+
+            predictions_row.append(
+                (
+                    task_value,
+                    result["input"],
+                    result["prediction"],
+                    result["expected"],
+                    result["score"],
+                )
+            )
+
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Question: %s", result["input"])
+                logger.debug("Prediction: %s", result["prediction"])
+                logger.debug("Expected: %s", result["expected"])
+                logger.debug("Score: %s", result["score"])
+
+        # Calculate scores by task
+        for task_name, results in task_results.items():
+            task_accuracy = results["correct"] / results["total"]
+            scores_row.append((task_name, task_accuracy))
 
         overall_accuracy = overall_correct_predictions / overall_total_predictions
 
+        # Store results
         self.predictions = pd.DataFrame(
             predictions_row,
             columns=[
@@ -135,9 +187,12 @@ class MMLUBenchmark(MMLU):
         """
         try:
             # Attempt to get a structured response
+            # We need to use the MultipleChoiceSchema class, but there's a type mismatch
+            # with the ainvoke method's schema parameter that expects a BaseModel instance.
+            # This is a limitation of the library's typing, not a real issue at runtime.
             response = await model.ainvoke(
                 prompt=prompt,
-                schema=MultipleChoiceSchema,
+                schema=MultipleChoiceSchema,  # type: ignore[arg-type]
             )
             return self._extract_answer(response)
         except TypeError as e:
@@ -216,6 +271,7 @@ async def _evaluate_model(
     mmlu_tasks: list[MMLUTask] | None = None,
     n_shots: int = 0,
     verbose: bool = False,
+    workers: int | None = None,
 ) -> float:
     """Evaluate a single model and return its score."""
     benchmark = MMLUBenchmark(
@@ -223,7 +279,7 @@ async def _evaluate_model(
         n_shots=n_shots,
         verbose_mode=verbose,
     )
-    score = await benchmark.a_evaluate(model=factly_model)
+    score = await benchmark.a_evaluate(model=factly_model, workers=workers)
     return float(score) if score is not None else 0.0
 
 
@@ -245,16 +301,19 @@ async def _evaluate(
         len(mmlu_tasks) if mmlu_tasks else "all",
     )
 
-    workers = workers or ResourceManager.get_optimal_workers(
-        min_workers=2, max_workers=30
+    # Determine optimal concurrency for question evaluation based on system resources
+    concurrency = workers or ResourceManager.get_optimal_workers(
+        min_workers=5, max_workers=20
     )
-    logger.info("Using %d concurrent workers for evaluation", workers)
-    logger.info("Model name: %s\n", model)
 
-    factly_models: list[FactlyGptModel] = []
-    prompt_versions: dict[int, str] = {}
+    logger.info("Concurrency: %d concurrent question evaluations", concurrency)
+    logger.info("Model name: %s", model)
 
-    for idx, instruction in enumerate(loaded_instructions):
+    # Initialize models with different instructions
+    factly_models = []
+    prompt_names = []
+
+    for instruction in loaded_instructions:
         model_instance = FactlyGptModel(
             model=model,
             system_prompt=instruction["system_prompt"],
@@ -263,32 +322,33 @@ async def _evaluate(
             api_key=openai.api_key,
         )
         factly_models.append(model_instance)
-        prompt_versions[idx] = instruction["name"]
-
-    semaphore = asyncio.Semaphore(workers)
-
-    async def run_evaluation(model_to_eval, tasks_to_run, idx):
-        async with semaphore:
-            score = await _evaluate_model(
-                model_to_eval,
-                tasks_to_run,
-                n_shots,
-                verbose,
-            )
-            return score, idx, prompt_versions[idx]
-
-    tasks = [
-        run_evaluation(model, mmlu_tasks, i) for i, model in enumerate(factly_models)
-    ]
+        prompt_names.append(instruction["name"])
 
     results = []
-    for coro in asyncio.as_completed(tasks):
-        score, idx, name = await coro
-        results.append((score, idx, name))
+    for i, model_instance in enumerate(factly_models):
+        logger.info(
+            "Evaluating prompt '%s' (%d/%d)...",
+            model_instance.prompt_name,
+            i + 1,
+            len(factly_models),
+        )
 
-    results.sort(key=lambda x: x[1])
+        score = await _evaluate_model(
+            model_instance,
+            mmlu_tasks,
+            n_shots,
+            verbose,
+            workers,
+        )
+        results.append((score, model_instance.prompt_name))
+        logger.info(
+            "Completed evaluation for prompt '%s': %.4f",
+            model_instance.prompt_name,
+            score,
+        )
+
     logger.info("\nFinal Results:")
-    for score, _, name in results:
+    for score, name in sorted(results, key=lambda x: x[1]):
         logger.info("Prompt '%s': %.4f", name, score)
 
     if plot and len(results) > 0:

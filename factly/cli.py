@@ -114,7 +114,7 @@ def cli():
     "--workers",
     type=int,
     default=None,
-    help="Maximum number of concurrent model evaluations (auto-determined by default).",
+    help="Maximum number of concurrent question evaluations (auto-determined by default).",
 )
 @click.option(
     "--plot",
@@ -167,7 +167,7 @@ def evaluate(
             plot_path=plot_path,
         )
     except ValueError as e:
-        logger.error("Error resolving tasks: %s", e)
+        logger.error("Error resolving tasks: %s", e, exc_info=True)
         logger.info("Use 'factly list-tasks' to see available tasks")
         sys.exit(1)
 
