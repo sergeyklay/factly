@@ -6,11 +6,6 @@ import sys
 from pathlib import Path
 
 import click
-import openai
-from dotenv import load_dotenv
-
-from . import __copyright__, __version__
-from .tasks import list_available_tasks, resolve_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +32,18 @@ BANNER = r"""
 """
 
 
-load_dotenv(BASE_DIR / ".env")
+def get_version() -> str:
+    """Get version info."""
+    from . import __version__
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-openai.base_url = os.getenv("OPENAI_API_BASE")
+    return __version__
+
+
+def get_copyright() -> str:
+    """Get copyright info."""
+    from . import __copyright__
+
+    return __copyright__
 
 
 class RichGroup(click.Group):
@@ -60,12 +63,13 @@ class RichGroup(click.Group):
     help="CLI tool to evaluate ChatGPT factuality on MMLU benchmark.",
 )
 @click.version_option(
-    version=__version__,
+    version=get_version(),
     prog_name="factly",
-    message=f"""%(prog)s %(version)s
-{__copyright__}
-This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.""",
+    message="%(prog)s %(version)s\n"
+    + get_copyright()
+    + "\n"
+    + "This is free software; see the source for copying conditions.  There is NO\n"
+    + "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
 )
 def cli():
     """Entrypoint for factly CLI."""
@@ -86,21 +90,21 @@ def cli():
     "-m",
     "--model",
     type=str,
-    default=os.getenv("OPENAI_MODEL"),
+    default=None,
     help="Model name to use for evaluation.",
 )
 @click.option(
     "-u",
     "--url",
     type=str,
-    default=os.getenv("OPENAI_API_BASE"),
+    default=None,
     help="Model API URL to use for evaluation.",
 )
 @click.option(
     "-a",
     "--api-key",
     type=str,
-    default=os.getenv("OPENAI_API_KEY"),
+    default=None,
     help="Model API key to use for evaluation.",
 )
 @click.option(
@@ -147,9 +151,9 @@ def cli():
 )
 def evaluate(
     instructions: Path,
-    model: str,
     n_shots: int,
     verbose: bool,
+    model: str | None = None,
     url: str | None = None,
     api_key: str | None = None,
     tasks: list[str] | None = None,
@@ -158,11 +162,19 @@ def evaluate(
     plot_path: Path | None = None,
 ):
     """Evaluate the model on the MMLU benchmark."""
+    import openai
+    from dotenv import load_dotenv
+
     from factly.benchmarks import evaluate as do_evaluate
 
-    if api_key:
-        openai.api_key = api_key
+    from .tasks import resolve_tasks
 
+    load_dotenv(BASE_DIR / ".env")
+
+    url = url or os.getenv("OPENAI_API_BASE")
+    model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
+
+    openai.api_key = api_key or os.getenv("OPENAI_API_KEY")
     if url:
         openai.base_url = url
 
@@ -181,7 +193,7 @@ def evaluate(
 
         do_evaluate(
             instructions=instructions,
-            model=model or "gpt-4o",
+            model=model,
             tasks=mmlu_tasks,
             n_shots=n_shots,
             workers=workers,
@@ -198,12 +210,13 @@ def evaluate(
 @cli.command("list-tasks")
 def list_tasks():
     """List all available MMLU tasks for evaluation."""
+    # Import only when needed
+    from .tasks import list_available_tasks
+
     click.echo(list_available_tasks())
 
 
 def main(args: list[str] | None = None) -> int:
-    load_dotenv(BASE_DIR / ".env")
-
     try:
         # Invoke the Click command
         cli.main(args=args, standalone_mode=False)
