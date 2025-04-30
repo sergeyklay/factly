@@ -78,7 +78,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist/factly-*.*
+          path: dist/factly*.*
           retention-days: 7
 
   upload_test_pypi:
