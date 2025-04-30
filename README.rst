@@ -2,7 +2,7 @@
 Factly
 ======
 
-|ci| |codecov|
+|ci| |codecov| |docs|
 
 .. -teaser-begin-
 
@@ -177,3 +177,6 @@ Acknowledgements
    :target: https://codecov.io/gh/sergeyklay/factly
    :alt: Coverage
 
+.. |docs| image:: https://readthedocs.org/projects/factly/badge/?version=latest
+   :target: https://factly.readthedocs.io/en/latest/?badge=latest
+   :alt: Docs
