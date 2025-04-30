@@ -161,7 +161,7 @@ def evaluate(
 
         do_evaluate(
             instructions=instructions,
-            model=model,
+            model=model or "gpt-4o",
             tasks=mmlu_tasks,
             n_shots=n_shots,
             workers=workers,
