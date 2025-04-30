@@ -239,22 +239,12 @@ class MMLUBenchmark(MMLU):
 
         # Generate prompt from template
         prompt = self._create_prompt(task, golden)
-
-        # Get prediction using the most appropriate method for this model
-        try:
-            prediction = await self._get_structured_prediction(model, prompt)
-        except TypeError:
-            prompt += f"\n\n{self.confinement_instructions}"
-            prediction = self._normalize_text_response(await model.ainvoke(prompt))
-
-        # Ensure prediction is a string before scoring
-        prediction_str = str(prediction) if prediction is not None else ""
-        expected_str = (
-            str(golden.expected_output) if golden.expected_output is not None else ""
-        )
+        prediction = await self._get_structured_prediction(model, prompt)
 
         # Score the prediction against the expected answer
-        score = self.scorer.exact_match_score(expected_str, prediction_str)
+        score = self.scorer.exact_match_score(
+            str(golden.expected_output), str(prediction)
+        )
 
         return {"prediction": prediction, "score": score}
 
