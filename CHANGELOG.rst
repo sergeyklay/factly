@@ -22,6 +22,7 @@ Trivial/Internal Changes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Removed deprecated ``license`` key in favor of ``license-files`` key in ``pyproject.toml``, aligning with `PEP 639 <https://peps.python.org/pep-0639/#add-string-value-to-license-key>`_
+* Improved CLI performance by reorganizing imports and inplemented lazy loading of dependencies.
 
 Improved Documentation
 ^^^^^^^^^^^^^^^^^^^^^^

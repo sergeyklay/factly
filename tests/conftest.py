@@ -71,10 +71,11 @@ def isolated_env():
 @pytest.fixture
 def mock_resolve_tasks():
     """Mock the resolve_tasks function."""
-    with mock.patch("factly.cli.resolve_tasks") as mock_resolve:
-        task1 = mock.MagicMock(spec=MMLUTask)
-        task1.name = "mathematics"
-        task2 = mock.MagicMock(spec=MMLUTask)
-        task2.name = "physics"
-        mock_resolve.return_value = [task1, task2]
-        yield mock_resolve
+    with mock.patch("factly.cli.evaluate"):
+        with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:
+            task1 = mock.MagicMock(spec=MMLUTask)
+            task1.name = "mathematics"
+            task2 = mock.MagicMock(spec=MMLUTask)
+            task2.name = "physics"
+            mock_resolve.return_value = [task1, task2]
+            yield mock_resolve
