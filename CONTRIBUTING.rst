@@ -5,12 +5,12 @@ Contributing to Factly
 Thank you for considering contributing to Factly! This document outlines the process for contributing to the project and the coding standards we follow.
 
 Code of Conduct
---------------
+---------------
 
 Please be respectful and considerate when participating in this project. We strive to maintain a welcoming and inclusive environment for everyone.
 
 Getting Started
---------------
+---------------
 
 1. Fork the repository
 2. Clone your fork: ``git clone https://github.com/your-username/factly.git``
@@ -24,12 +24,12 @@ Getting Started
 4. Create a branch for your changes: ``git checkout -b feature/your-feature-name``
 
 Development Environment
-----------------------
+-----------------------
 
 Factly requires Python 3.12+ and uses `uv <https://github.com/astral-sh/uv>`_ for dependency management.
 
 Useful Commands
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
 - Install dependencies: ``uv pip install -r pyproject.toml``
 - Add a new dependency: ``uv add <dependency>``
@@ -37,15 +37,15 @@ Useful Commands
 - List installed packages: ``uv pip list``
 
 Coding Standards
----------------
+----------------
 
 Python Version
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 All code must be compatible with **Python 3.12+**.
 
 Code Style
-^^^^^^^^^
+^^^^^^^^^^
 
 We use `ruff <https://docs.astral.sh/ruff>`_ for linting and formatting. Before submitting a pull request, please ensure your code passes the linter:
 
@@ -57,7 +57,7 @@ We use `ruff <https://docs.astral.sh/ruff>`_ for linting and formatting. Before 
 The linter configuration is in ``pyproject.toml``.
 
 Naming Conventions
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 Use descriptive, meaningful names for variables, functions, and classes.
 
@@ -109,7 +109,7 @@ Use type hints for function parameters and return values:
        ...
 
 Error Handling
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 Use try-except blocks to handle exceptions gracefully and log errors:
 
@@ -137,7 +137,7 @@ Use Python's built-in logging module instead of print statements:
    print(f"Processing task {task_name}")
 
 Code Structure
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 - Limit line length to 88 characters
 - Use 4 spaces for indentation
@@ -165,7 +165,7 @@ Run tests with:
    pytest
 
 Pull Request Process
--------------------
+--------------------
 
 1. Ensure your code passes all linting and tests
 2. Update documentation if necessary
@@ -173,7 +173,7 @@ Pull Request Process
 4. Reference any related issues in your pull request description
 
 Project Structure
-----------------
+-----------------
 
 - Core functionality goes in the ``factly/`` package
 - CLI entrypoint is ``factly/cli.py``
@@ -181,12 +181,12 @@ Project Structure
 - Output should be both machine-readable (CSV/JSON) and human-friendly (charts, tables, text)
 
 Questions?
----------
+----------
 
 If you have questions about contributing, please open an issue or reach out to the maintainers.
 
 References
----------
+----------
 
 - `Python PEP 8 Style Guide <https://peps.python.org/pep-0008/>`_
 - `Google Python Style Guide <https://google.github.io/styleguide/pyguide.html>`_
