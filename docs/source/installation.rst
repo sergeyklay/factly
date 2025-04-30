@@ -187,6 +187,7 @@ If you need the latest unreleased features, you can install directly from the Gi
    The ``main`` branch will always contain the latest unstable version, so the experience
    might not be as smooth. If you wish to use a stable version, consider installing from PyPI
    or switching to a specific `tag <https://github.com/sergeyklay/factly/tags>`_.
+
 Installing for Development
 --------------------------
 
