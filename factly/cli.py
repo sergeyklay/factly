@@ -83,10 +83,25 @@ def cli():
     ),
 )
 @click.option(
+    "-m",
     "--model",
     type=str,
     default=os.getenv("OPENAI_MODEL"),
-    help="OpenAI model to use for evaluation.",
+    help="Model name to use for evaluation.",
+)
+@click.option(
+    "-u",
+    "--url",
+    type=str,
+    default=os.getenv("OPENAI_API_BASE"),
+    help="Model API URL to use for evaluation.",
+)
+@click.option(
+    "-a",
+    "--api-key",
+    type=str,
+    default=os.getenv("OPENAI_API_KEY"),
+    help="Model API key to use for evaluation.",
 )
 @click.option(
     "--n-shots",
@@ -135,7 +150,9 @@ def evaluate(
     model: str,
     n_shots: int,
     verbose: bool,
-    tasks: list[str] | None,
+    url: str | None = None,
+    api_key: str | None = None,
+    tasks: list[str] | None = None,
     workers: int | None = None,
     plot: bool = False,
     plot_path: Path | None = None,
@@ -143,8 +160,11 @@ def evaluate(
     """Evaluate the model on the MMLU benchmark."""
     from factly.benchmarks import evaluate as do_evaluate
 
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    openai.base_url = os.getenv("OPENAI_API_BASE")
+    if api_key:
+        openai.api_key = api_key
+
+    if url:
+        openai.base_url = url
 
     try:
         # Convert None to empty list to satisfy type checking

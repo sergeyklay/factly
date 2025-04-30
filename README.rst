@@ -6,7 +6,7 @@ Factly
 
 .. -teaser-begin-
 
-Factly is a modern CLI tool designed to evaluate the factuality of Large Language Models (LLMs) on the MMLU (Massive Multitask Language Understanding) benchmark. It provides a robust framework for prompt engineering experiments and factual accuracy assessment.
+Factly is a modern CLI tool designed to evaluate the factuality of Large Language Models (LLMs) on the Massive Multitask Language Understanding (MMLU) benchmark. It provides a robust framework for prompt engineering experiments and factual accuracy assessment.
 
 .. -teaser-end-
 
@@ -42,8 +42,6 @@ Quick Start
 
 
 That's it! The tool uses optimized default parameters and saves all outputs to the ``output`` directory.
-
-For more advanced usage, including saving results and evaluation, see the `Usage Guide <https://factly-eval.readthedocs.io/en/latest/usage.html>`_.
 
 .. note::
 
