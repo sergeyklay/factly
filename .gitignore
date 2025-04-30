@@ -23,7 +23,7 @@ __pycache__
 /coverage
 
 # Build stuff.
-/build
+/dist
 
 # Ruff cache.
 /.ruff_cache
