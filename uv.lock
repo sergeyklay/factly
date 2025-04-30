@@ -536,7 +536,7 @@ wheels = [
 ]
 
 [[package]]
-name = "factly"
+name = "factly-eval"
 version = "1.0.0"
 source = { editable = "." }
 dependencies = [

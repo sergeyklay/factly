@@ -91,7 +91,7 @@ There are several ways to install ``factly`` depending on your needs:
 Installing from PyPI (Recommended)
 ----------------------------------
 
-``factly`` is a Python package `hosted on PyPI <https://pypi.org/project/factly/>`_.
+``factly`` is a Python package `hosted on PyPI <https://pypi.org/project/factly-eval/>`_.
 The recommended installation method is using `pip <https://pip.pypa.io/en/stable/>`_ to install into a virtual environment:
 
 .. code-block:: bash
@@ -100,15 +100,15 @@ The recommended installation method is using `pip <https://pip.pypa.io/en/stable
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-   # Install clusx
-   python -m pip install factly
+   # Install factly-eval
+   python -m pip install factly-eval
 
    # Alternative commands if python points to Python 2.x on your system
    python3 -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   python3 -m pip install factly
+   python3 -m pip install factly-eval
    # or
-   pip3 install factly
+   pip3 install factly-eval
 
 After installation, the ``factly`` command will be available from the command line:
 
@@ -146,8 +146,8 @@ Another way to install package is to download it from GitHub Releases page:
 
       # Download the latest release artifacts and checksums (replace X.Y.Z with the actual version)
       # You can use wget or curl
-      wget https://github.com/sergeyklay/factly/releases/download/X.Y.Z/factly-X.Y.Z-py3-none-any.whl
-      wget https://github.com/sergeyklay/factly/releases/download/X.Y.Z/factly-X.Y.Z.tar.gz
+      wget https://github.com/sergeyklay/factly/releases/download/X.Y.Z/factly-eval-X.Y.Z-py3-none-any.whl
+      wget https://github.com/sergeyklay/factly/releases/download/X.Y.Z/factly-eval-X.Y.Z.tar.gz
       wget https://github.com/sergeyklay/factly/releases/download/X.Y.Z/SHA256SUMS
 
       # Verify the integrity of the downloaded files
@@ -158,14 +158,14 @@ Another way to install package is to download it from GitHub Releases page:
       source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
       # Install the verified package (choose one)
-      pip install factly-X.Y.Z-py3-none-any.whl  # Wheel file (recommended)
+      pip install factly-eval-X.Y.Z-py3-none-any.whl  # Wheel file (recommended)
       # OR
-      pip install factly-X.Y.Z.tar.gz  # Source distribution
+      pip install factly-eval-X.Y.Z.tar.gz  # Source distribution
 
       # If python points to Python 2.x on your system
-      pip3 install factly-X.Y.Z-py3-none-any.whl
+      pip3 install factly-eval-X.Y.Z-py3-none-any.whl
       # Or
-      pip3 install factly-X.Y.Z.tar.gz
+      pip3 install factly-eval-X.Y.Z.tar.gz
 
       # Verify the installation
       factly --version
@@ -178,16 +178,15 @@ If you need the latest unreleased features, you can install directly from the Gi
 .. code-block:: bash
 
    # Install the latest development version
-   python -m pip install -e git+https://github.com/sergeyklay/factly.git#egg=factly
+   python -m pip install -e git+https://github.com/sergeyklay/factly.git#egg=factly-eval
 
    # If python points to Python 2.x on your system
-   python3 -m pip install -e git+https://github.com/sergeyklay/factly.git#egg=factly
+   python3 -m pip install -e git+https://github.com/sergeyklay/factly.git#egg=factly-eval
 
 .. note::
    The ``main`` branch will always contain the latest unstable version, so the experience
    might not be as smooth. If you wish to use a stable version, consider installing from PyPI
    or switching to a specific `tag <https://github.com/sergeyklay/factly/tags>`_.
-
 Installing for Development
 --------------------------
 
