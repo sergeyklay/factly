@@ -46,7 +46,9 @@ jobs:
         run: uv sync --locked --no-default-groups --group docs
 
       - name: Build and test package documentation
-        run: make docs
+        run: |
+            ls -al
+            make docs
 
       - name: Archive docs artifacts
         if: always()
