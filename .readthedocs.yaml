@@ -14,7 +14,7 @@ build:
       - asdf global uv latest
       - uv venv
     install:
-      - uv pip install -r pyproject.toml
+      - uv pip install -r pyproject.toml --no-default-groups --group docs
     build:
       html:
         - uv run sphinx-build -T -b html docs/source $READTHEDOCS_OUTPUT/html
