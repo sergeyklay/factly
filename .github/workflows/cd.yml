@@ -58,7 +58,9 @@ jobs:
 
       - name: Verify package
         run: |
-          uv pip install twine
+          # See: https://github.com/pypi/warehouse/issues/15611
+          uv pip install "twine>=6.1.0"
+
           twine check dist/*
           # Install the package and check version
           uv pip install dist/*.whl
