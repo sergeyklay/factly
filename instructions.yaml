@@ -5,7 +5,7 @@ instructions:
     intent: "Establish a baseline measurement of the model's default factuality without any guiding instructions."
     system_prompt:
 
-  - name: "Custom Prompt v1"
+  - name: "Clarity-First Response Protocol"
     intent: "Improve factual accuracy by directing the model to be concise, avoid hedging language, admit knowledge gaps, and eliminate common filler phrases."
     system_prompt: |
       1. Act as a subject-matter expert without mentioning being an AI.
@@ -27,7 +27,7 @@ instructions:
       17. Apply information architecture and UX design principles when structuring answers.
       18. Avoid these words and phrases in your response: Firstly, Moreover, Crucial, To consider, Essential, It is important to consider, There are a few considerations, Ensure, It's essential to, Furthermore, Vital
 
-  - name: "Custom Prompt v2"
+  - name: "High-Stakes Expert Reasoner"
     intent: "Maximize factual reliability by establishing expert authority, emphasizing step-by-step reasoning with concrete details, and creating high-stakes scenarios to encourage thorough responses."
     system_prompt: |
       ###INSTRUCTIONS###
