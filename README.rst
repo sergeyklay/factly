@@ -26,57 +26,8 @@ Features
 
    Currently, only OpenAI models are supported.
 
-Prerequisites
--------------
-
-- Python 3.12+
-- `uv <https://github.com/astral-sh/uv>`_ for dependency management
-
-Installation
-------------
-
-.. code-block:: bash
-
-   # Clone the repository
-   git clone https://github.com/yourusername/factly.git
-   cd factly
-
-   # Install dependencies
-   uv pip install -r pyproject.toml
-
-   # Set up environment configuration
-   cp .env.example .env
-   # Edit .env with your API keys and configuration
-
-Configuration
--------------
-
-Environment Variables
-^^^^^^^^^^^^^^^^^^^^^
-
-Configure your API keys and settings in the ``.env`` file:
-
-.. code-block:: bash
-
-   OPENAI_API_KEY=your_api_key_here
-   OPENAI_MODEL=gpt-4o
-
-   # Optional, defaults to OpenAI's API base.
-   # Set if you are using a proxy like LiteLLM.
-   OPENAI_API_BASE=your_api_base_url
-
-System Instructions
-^^^^^^^^^^^^^^^^^^^
-
-Prompts and instruction variants for evaluation are defined in ``instructions.yaml``. You can modify existing instructions or add new ones following the established structure.
-
-Usage
------
-
-The primary entrypoint is the ``factly`` command-line interface.
-
-Basic Evaluation
-^^^^^^^^^^^^^^^^
+Quick Start
+-----------
 
 .. code-block:: bash
 
@@ -89,85 +40,36 @@ Basic Evaluation
    # Get help on all available options
    factly evaluate --help
 
-Advanced Options
-^^^^^^^^^^^^^^^^
 
-.. code-block:: bash
+That's it! The tool uses optimized default parameters and saves all outputs to the ``output`` directory.
 
-   # Evaluate specific model on selected MMLU tasks
-   factly evaluate --model gpt-4o --tasks mathematics --tasks high_school_us_history --plot
+For more advanced usage, including saving results and evaluation, see the `Usage Guide <https://factly.readthedocs.io/en/latest/usage.html>`_.
 
-   # Specify number of shots for few-shot learning
-   factly evaluate --n-shots 3 --verbose
+.. note::
 
-Performance Optimization
-^^^^^^^^^^^^^^^^^^^^^^^^
+   For detailed installation instructions, please see the `Installation Guide <https://factly.readthedocs.io/en/latest/installation.html>`_. And for usage instructions, use cases, examples, and advanced configuration options, please see the `Usage Guide <https://factly.readthedocs.io/en/latest/usage.html>`_.
 
-Factly uses asynchronous concurrent processing to maximize evaluation throughput.
-It evaluates multiple questions concurrently for each model, significantly reducing
-total evaluation time. You can control the concurrency level with the ``--workers``
-parameter, which defaults to an automatically determined optimal value.
+.. -overview-end-
 
-Usage Examples:
+.. -project-information-begin-
 
-.. code-block:: bash
+Project Information
+===================
 
-   # Basic usage (auto-determines optimal concurrency)
-   factly evaluate --tasks STEM --tasks BUSINESS
+Factly is released under the `MIT License <https://choosealicense.com/licenses/mit/>`_, its documentation lives at `Read the Docs <https://factly.readthedocs.io/>`_, the code on `GitHub <https://github.com/sergeyklay/factly>`_, and the latest release on `PyPI <https://pypi.org/project/factly/>`_. It's rigorously tested on Python 3.12+.
 
-   # Set concurrency level explicitly (process 20 questions in parallel)
-   factly evaluate --tasks STEM --workers 20
+If you'd like to contribute to Factly you're most welcome!
 
-   # Compare performance with different concurrency levels
-   factly evaluate --tasks STEM --workers 5
-   factly evaluate --tasks STEM --workers 30
+.. -project-information-end-
 
-The implementation uses ``asyncio`` and semaphores for controlled concurrency with automatic
-resource detection for optimal performance across different environments.
+.. -support-begin-
 
-Project Structure
------------------
+Support
+=======
 
-- ``factly/`` - Main package directory containing core functionality
-- ``instructions.yaml`` - System prompts/instructions for LLM evaluation
-- ``outputs/`` - Generated plots and evaluation results
-- ``.env`` - Local configuration (API keys, settings)
+Should you have any question, any remark, or if you find a bug, or if there is something you can't do with the Factly, please `open an issue <https://github.com/sergeyklay/factly/issues>`_.
 
-Development
------------
-
-Setting up the development environment:
-
-.. code-block:: bash
-
-   # Install development dependencies
-   uv pip install -e ".[dev]"
-
-   # Run linter
-   ruff check .
-   ruff format .
-
-   # Run tests
-   pytest
-
-Contributing
------------
-
-Contributions are welcome! Please read our `Contributing Guide <CONTRIBUTING.rst>`_ for details on our code of conduct and the process for submitting pull requests.
-
-License
--------
-
-This project is licensed under the MIT License - see the `LICENSE <LICENSE>`_ file for details.
-
-Acknowledgements
-----------------
-
-- `MMLU benchmark <https://github.com/hendrycks/test>`_ by Dan Hendrycks
-- `DeepEval <https://github.com/confident-ai/deepeval>`_ for evaluation framework
-- OpenAI, Anthropic, and other LLM providers
-
-.. -acknowledgements-end-
+.. -support-end-
 
 .. |ci| image:: https://github.com/sergeyklay/factly/actions/workflows/ci.yml/badge.svg
    :target: https://github.com/sergeyklay/factly/actions/workflows/ci.yml
