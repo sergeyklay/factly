@@ -223,7 +223,7 @@ If you plan to contribute to the project or need to modify the code, follow thes
       # See https://github.com/astral-sh/uv
 
       # Install dependencies
-      uv pip install -r pyproject.toml
+      uv sync --locked
 
 4. Verifying Installation:
 
@@ -295,16 +295,16 @@ You can install specific dependency groups:
 .. code-block:: bash
 
    # Install only development tools
-   uv pip install -r pyproject.toml --no-default-groups --group dev
+   uv sync --locked --no-default-groups --group dev
 
    # Install only testing tools
-   uv pip install -r pyproject.toml --no-default-groups --group testing
+   uv sync --locked --no-default-groups --group testing
 
    # Install only documentation tools
-   uv pip install -r pyproject.toml --no-default-groups --group docs
+   uv sync --locked --no-default-groups --group docs
 
    # Install development and testing but not documentation
-   uv pip install -r pyproject.toml --no-default-groups --group dev --group testing
+   uv sync --locked --no-default-groups --group dev --group testing
 
 Adding Dependencies
 -------------------
