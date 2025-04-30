@@ -72,7 +72,12 @@ factly = "factly.cli:cli"
 
 [dependency-groups]
 dev = ["ruff>=0.11.6"]
-testing = []
+testing = [
+    "coverage[toml]>=7.7.1,<8.0",
+    "pytest>=8.3.5,<9.0",
+    "pytest-mock>=3.14.0,<4.0",
+    "pytest-asyncio>=0.26.0,<1.0",
+]
 
 [tool.uv.sources]
 # Mostly due to https://github.com/pallets/click/pull/2365
@@ -100,3 +105,57 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["factly"]
+
+[tool.pytest.ini_options]
+addopts = "--verbose --durations=25 --no-header"
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.report]
+# Set the number of decimal places in coverage percentage
+precision = 2
+
+# Show lines that were not executed
+show_missing = true
+
+# Skip empty files
+skip_empty = true
+
+# Exclude lines from coverage report
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:"]
+
+[tool.coverage.html]
+# Directory for the HTML format report
+directory = "coverage/html"
+
+[tool.coverage.lcov]
+# Filename for the LCOV format report
+output = "coverage/lcov/coverage.lcov"
+
+[tool.coverage.xml]
+# Filename for the XML format report
+output = "coverage/xml/coverage.xml"
+
+[tool.coverage.run]
+# Enable branch coverage (default: False)
+branch = true
+
+# Run tests in parallel (useful when using CI/CD)
+parallel = true
+
+# Filename for storing coverage data
+data_file = "coverage/.coverage"
+
+# Source code directories to include in the coverage report
+source = ["factly"]
+
+# Omit specified files or directories from the report
+omit = [
+    "__init__.py",
+    "*/__pycache__/*",
+    "*/.venv/*",
+    "*/build/*",
+    "*/coverage/*",
+    "*/pytest_cache/*",
+    "*/tests/*",
+]
