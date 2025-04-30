@@ -153,7 +153,7 @@ Setting up the development environment:
 Contributing
 -----------
 
-Contributions are welcome! Please read our `Contributing Guide <CONTRIBUTING.md>`_ for details on our code of conduct and the process for submitting pull requests.
+Contributions are welcome! Please read our `Contributing Guide <CONTRIBUTING.rst>`_ for details on our code of conduct and the process for submitting pull requests.
 
 License
 -------
