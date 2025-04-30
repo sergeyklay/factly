@@ -9,9 +9,6 @@
 /.venv
 /venv
 
-# Pytest cache.
-/.pytest_cache
-
 # App settings and secrets
 /.env
 
@@ -19,14 +16,19 @@
 *.py[cod]
 __pycache__
 
-# Codecoverage stuff.
+# Testing
 /coverage
+/.pytest_cache
+/junit.xml
 
-# Build stuff.
+# Distribution / packaging.
 /dist
 
 # Ruff cache.
 /.ruff_cache
 
-# Run outputs.
+# Documentation.
+/docs/build
+
+# Project specific.
 /outputs
