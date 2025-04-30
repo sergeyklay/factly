@@ -47,7 +47,7 @@ jobs:
 
       - name: Build and test package documentation
         run: |
-            ls -al
+            ls -al .venv/bin
             make docs
 
       - name: Archive docs artifacts
