@@ -22,3 +22,9 @@ ccov:
 	uv run coverage report
 	uv run coverage html
 	uv run coverage xml
+
+.PHONY: docs
+docs: CONTRIBUTING.rst README.rst
+	@$(MAKE) -C docs clean
+	uv run python -m doctest CONTRIBUTING.rst README.rst
+	uv run sphinx-build --jobs auto --builder html --nitpicky --show-traceback --fail-on-warning --doctree-dir docs/build/doctrees docs/source docs/build/html
