@@ -78,13 +78,14 @@ testing = [
     "pytest-mock>=3.14.0,<4.0",
     "pytest-asyncio>=0.26.0,<1.0",
 ]
+docs = ["sphinx>=8.2.3,<9.0", "sphinx-rtd-theme>=3.0.2,<4.0"]
 
 [tool.uv.sources]
 # Mostly due to https://github.com/pallets/click/pull/2365
 click = { git = "https://github.com/pallets/click.git", rev = "release-8.2.0" }
 
 [tool.uv]
-default-groups = ["dev", "testing"]
+default-groups = ["dev", "docs", "testing"]
 
 [tool.ruff]
 target-version = "py312"
