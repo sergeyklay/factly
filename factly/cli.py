@@ -1,5 +1,7 @@
 """Factly CLI entrypoint."""
 
+from __future__ import annotations
+
 import logging
 import sys
 from pathlib import Path
@@ -202,12 +204,15 @@ def evaluate(
     try:
         # Create settings with CLI parameters taking precedence
         settings = FactlySettings.from_cli(
+            # Model settings
             model=model,
             api_key=api_key,
             api_base=url,
+            # Inference settings
             temperature=temperature,
             top_p=top_p,
             max_tokens=max_tokens,
+            n_shots=n_shots,
         )
 
         # Configure OpenAI client from settings
@@ -226,15 +231,11 @@ def evaluate(
 
         do_evaluate(
             instructions=instructions,
-            model=settings.model.model,
+            settings=settings,
             tasks=mmlu_tasks,
-            n_shots=n_shots,
             workers=workers,
             plot=plot,
             plot_path=plot_path,
-            temperature=settings.inference.temperature,
-            top_p=settings.inference.top_p,
-            max_tokens=settings.inference.max_tokens,
         )
     except ValidationError as e:
         errors = e.errors()

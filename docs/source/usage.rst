@@ -82,12 +82,14 @@ Command Line Options for ``evaluate``
        use ``1``. For structured outputs or when using system prompts that encourage reasoning,
        use higher values (``256`` or more) and post-process to extract final answers.
      - ``256``
+   * - ``--n-shots INTEGER``
+     - Number of examples for few-shot learning. Default set to 0 for zero-shot evaluation.
+       Increasing this value provides more demonstration examples in prompts to help the
+       model understand the task format.
+     - ``0``
    * - ``--tasks TEXT`` (repeatable)
      - MMLU task categories to evaluate (can be repeated)
      - All tasks
-   * - ``--n-shots INTEGER``
-     - Number of examples for few-shot learning
-     - ``0``
    * - ``-j``, ``--workers INTEGER``
      - Maximum number of concurrent question evaluations
      - Auto-detected based on system resources

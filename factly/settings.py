@@ -4,6 +4,8 @@ Settings module for Factly CLI.
 Defines configuration models for API, inference, and overall application settings.
 """
 
+from __future__ import annotations
+
 from typing import Optional
 
 from pydantic import Field
@@ -63,11 +65,15 @@ class InferenceSettings(BaseSettings):
             benchmarks if your prompts expect structured outputs (e.g., JSON) or
             encourage reasoning before answering. With higher max_tokens, you may need
             to post-process results to extract final answers.
+        n_shots (int): Number of examples for few-shot learning. Default set to 0 for
+            zero-shot evaluation. Increasing this value provides more demonstration
+            examples in prompts to help the model understand the task format.
     """
 
     temperature: float = Field(default=0.0, ge=0.0, le=2.0)
     top_p: float = Field(default=1.0, gt=0.0, le=1.0)
     max_tokens: int = Field(default=256, gt=0)
+    n_shots: int = Field(default=0, ge=0)
 
     @classmethod
     def create(cls, **kwargs) -> "InferenceSettings":
@@ -148,6 +154,7 @@ class FactlySettings(BaseSettings):
         temperature: float | None = None,
         top_p: float | None = None,
         max_tokens: int | None = None,
+        n_shots: int | None = None,
     ) -> "FactlySettings":
         """
         Create settings by combining CLI arguments with environment variables.
@@ -162,6 +169,7 @@ class FactlySettings(BaseSettings):
             temperature: Sampling temperature
             top_p: Nucleus sampling parameter
             max_tokens: Maximum tokens to generate
+            n_shots: Number of examples for few-shot learning
 
         Returns:
             FactlySettings: Combined settings with proper priority
@@ -173,6 +181,8 @@ class FactlySettings(BaseSettings):
             inference_kwargs["top_p"] = top_p
         if max_tokens is not None:
             inference_kwargs["max_tokens"] = max_tokens
+        if n_shots is not None:
+            inference_kwargs["n_shots"] = n_shots
 
         _inference = InferenceSettings.create(**inference_kwargs)
 
