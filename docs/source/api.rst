@@ -54,6 +54,13 @@ The ``resources`` module
     :members:
     :no-undoc-members:
 
+The ``settings`` module
+------------------------
+
+.. automodule:: factly.settings
+    :members:
+    :no-undoc-members:
+
 The ``tasks`` module
 --------------------
 

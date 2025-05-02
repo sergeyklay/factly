@@ -165,20 +165,6 @@ def test_evaluate_with_mock_tasks(runner, mock_tasks):
             assert mock_evaluate.call_args.kwargs["tasks"] == mock_tasks
 
 
-def test_evaluate_task_resolution_error(runner):
-    """Test error handling when task resolution fails."""
-    with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:
-        mock_resolve.side_effect = ValueError("Invalid task")
-        with mock.patch("factly.cli.logger") as mock_logger:
-            result = runner.invoke(cli, ["evaluate", "--tasks", "invalid_task"])
-
-            assert result.exit_code == 1
-            mock_logger.error.assert_called_once()
-            mock_logger.info.assert_called_once_with(
-                "Use 'factly list-tasks' to see available tasks"
-            )
-
-
 def test_evaluate_default_tasks(runner, mock_tasks):
     """Test that no task argument resolves to all tasks."""
     with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:

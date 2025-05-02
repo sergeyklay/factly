@@ -8,7 +8,7 @@ Versions follow `Semantic Versioning <https://semver.org/>`_ (``<major>.<minor>.
 
 Backward incompatible (breaking) changes will only be introduced in major versions with advance notice in the **Deprecations** section of releases.
 
-1.0.2 - 2025-??-??
+1.1.0 - 2025-05-??
 ------------------
 
 Features
@@ -17,6 +17,7 @@ Features
 * Added short flags for ``--model`` (``-m``) CLI option.
 * Introduced new ``--url`` (``-u``) and ``--api-key`` (``-a``) options for specifying the model API URL and API key directly via the CLI or environment variables (``OPENAI_API_BASE``, ``OPENAI_API_KEY``).
 * CLI now prioritizes values from command-line options, falling back to environment variables or ``.env`` file for ``model``, ``url``, and ``api-key``.
+* Implement ``FactlySettings`` class to manage model and inference settings, including support for CLI arguments, environment variables, and ``.env`` file.
 
 Trivial/Internal Changes
 ^^^^^^^^^^^^^^^^^^^^^^^^
