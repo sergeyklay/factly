@@ -24,7 +24,6 @@ class MMLUBenchmark(MMLU):
         tasks: list[MMLUTask] | None = None,
         n_shots: int = 0,
         n_problems_per_task: int | None = None,
-        verbose_mode: bool = False,
         confinement_instructions: str | None = None,
         **kwargs,
     ):
@@ -32,7 +31,6 @@ class MMLUBenchmark(MMLU):
             tasks=tasks or list(MMLUTask),
             n_shots=n_shots,
             n_problems_per_task=n_problems_per_task,
-            verbose_mode=verbose_mode,
             confinement_instructions=confinement_instructions,
             **kwargs,
         )
@@ -70,9 +68,7 @@ class MMLUBenchmark(MMLU):
         Returns:
             The overall accuracy score
         """
-        # Set up concurrency control
-        concurrency = self.set_concurrency(workers)
-        logger.info("Processing questions with concurrency level: %d", concurrency)
+        self.set_concurrency(workers)
 
         # Collect all questions across all tasks
         total_questions = 0
@@ -97,15 +93,15 @@ class MMLUBenchmark(MMLU):
         async def process_question(task, golden, idx):
             """Process a single question with semaphore-controlled concurrency."""
             async with self._concurrency_semaphore:
-                result = await self.a_predict(model, task, golden)
+                prediction, score = await self.a_predict(model, task, golden)
                 progress_bar.update(1)
                 return {
                     "idx": idx,
                     "task_value": task.value,
                     "input": golden.input,
-                    "prediction": result["prediction"],
+                    "prediction": prediction,
                     "expected": golden.expected_output,
-                    "score": result["score"],
+                    "score": score,
                 }
 
         # Launch all evaluation tasks
@@ -150,11 +146,10 @@ class MMLUBenchmark(MMLU):
                 )
             )
 
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("Question: %s", result["input"])
-                logger.debug("Prediction: %s", result["prediction"])
-                logger.debug("Expected: %s", result["expected"])
-                logger.debug("Score: %s", result["score"])
+            logger.debug("Question: %s", result["input"])
+            logger.debug("Prediction: %s", result["prediction"])
+            logger.debug("Expected: %s", result["expected"])
+            logger.debug("Score: %s", result["score"])
 
         # Calculate scores by task
         for task_name, results in task_results.items():
@@ -186,6 +181,14 @@ class MMLUBenchmark(MMLU):
 
         Returns a normalized string prediction.
         """
+        # Idiomatically, MMLU tests use max_tokens=1. In that case we need to
+        # add the confinement instructions to the prompt and invoke the model
+        # without a schema.
+        if model.max_tokens == 1:
+            constrained_prompt = f"{prompt}\n\n{self.confinement_instructions}"
+            response = await model.ainvoke(constrained_prompt)
+            return self._normalize_text_response(response)
+
         try:
             # Attempt to get a structured response
             response = await model.ainvoke(
@@ -233,7 +236,7 @@ class MMLUBenchmark(MMLU):
 
     async def a_predict(
         self, model: FactlyGptModel, task: MMLUTask, golden: Golden
-    ) -> dict:
+    ) -> tuple[str, float]:
         if self.shots_dataset is None:
             raise RuntimeError("Example dataset is empty")
 
@@ -246,7 +249,7 @@ class MMLUBenchmark(MMLU):
             str(golden.expected_output), str(prediction)
         )
 
-        return {"prediction": prediction, "score": score}
+        return prediction, score
 
 
 def load_instructions(path: Path) -> list[dict]:
@@ -260,15 +263,10 @@ async def _evaluate_model(
     factly_model: FactlyGptModel,
     mmlu_tasks: list[MMLUTask] | None = None,
     n_shots: int = 0,
-    verbose: bool = False,
     workers: int | None = None,
 ) -> float:
     """Evaluate a single model and return its score."""
-    benchmark = MMLUBenchmark(
-        tasks=mmlu_tasks,
-        n_shots=n_shots,
-        verbose_mode=verbose,
-    )
+    benchmark = MMLUBenchmark(tasks=mmlu_tasks, n_shots=n_shots)
     score = await benchmark.a_evaluate(model=factly_model, workers=workers)
     return float(score) if score is not None else 0.0
 
@@ -279,9 +277,11 @@ async def _evaluate(
     mmlu_tasks: list[MMLUTask] | None = None,
     n_shots: int = 0,
     workers: int | None = None,
-    verbose: bool = False,
     plot: bool = False,
     plot_path: Path | None = None,
+    temperature: float = 0.0,
+    top_p: float = 1.0,
+    max_tokens: int = 1,
 ) -> None:
     """Asynchronously evaluate models with different prompts on the MMLU benchmark."""
     loaded_instructions = load_instructions(instructions)
@@ -298,6 +298,9 @@ async def _evaluate(
 
     logger.info("Concurrency: %d concurrent question evaluations", concurrency)
     logger.info("Model name: %s", model)
+    logger.info("Temperature: %.1f", temperature)
+    logger.info("Top-p: %.1f", top_p)
+    logger.info("Max tokens: %d", max_tokens)
 
     # Initialize models with different instructions
     factly_models = []
@@ -310,6 +313,9 @@ async def _evaluate(
             prompt_name=instruction["name"],
             base_url=openai.base_url,
             api_key=openai.api_key,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
         )
         factly_models.append(model_instance)
         prompt_names.append(instruction["name"])
@@ -323,13 +329,7 @@ async def _evaluate(
             len(factly_models),
         )
 
-        score = await _evaluate_model(
-            model_instance,
-            mmlu_tasks,
-            n_shots,
-            verbose,
-            workers,
-        )
+        score = await _evaluate_model(model_instance, mmlu_tasks, n_shots, workers)
         results.append((score, model_instance.prompt_name))
         logger.info(
             "Completed evaluation for prompt '%s': %.4f",
@@ -361,37 +361,17 @@ async def _evaluate(
             logger.error("Make sure matplotlib is installed: pip install matplotlib")
 
 
-def _configure_logging(verbose: bool = False):
-    """Configure module-specific logging without affecting third-party loggers.
-
-    Args:
-        verbose: Whether to show detailed information
-    """
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(logging.Formatter("%(message)s"))
-
-    level = logging.INFO if verbose else logging.WARNING
-
-    logger.setLevel(level)
-    logger.addHandler(console_handler)
-
-    logger.propagate = False
-
-    while logger.handlers:
-        logger.handlers.pop()
-
-    logger.addHandler(console_handler)
-
-
 def evaluate(
     instructions: Path,
     model: str,
     tasks: list[MMLUTask] | None = None,
     n_shots: int = 0,
     workers: int | None = None,
-    verbose: bool = False,
     plot: bool = False,
     plot_path: Path | None = None,
+    temperature: float = 0.0,
+    top_p: float = 1.0,
+    max_tokens: int = 1,
 ):
     """Evaluate models with different prompts on the MMLU benchmark.
 
@@ -402,12 +382,13 @@ def evaluate(
         n_shots: Number of shots for few-shot learning (default: 0)
         workers: Number of concurrent workers for model evaluations
                 (default: auto-determined based on system resources)
-        verbose: Whether to print detailed progress information (default: False)
         plot: Whether to generate a plot of the results (default: False)
         plot_path: Path to save the plot
             (default: ./outputs/factuality-<model>-t<count>.png)
+        temperature: Sampling temperature for inference (default: 0.0)
+        top_p: Nucleus sampling parameter (default: 1.0)
+        max_tokens: Maximum tokens per response (default: 1)
     """
-    _configure_logging(verbose)
     asyncio.run(
         _evaluate(
             instructions,
@@ -415,8 +396,10 @@ def evaluate(
             tasks,
             n_shots,
             workers,
-            verbose,
             plot,
             plot_path,
+            temperature,
+            top_p,
+            max_tokens,
         )
     )

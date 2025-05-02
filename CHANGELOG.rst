@@ -14,16 +14,18 @@ Backward incompatible (breaking) changes will only be introduced in major versio
 Features
 ^^^^^^^^
 
-* Added short flags for ``--model`` (``-m``) CLI option.
+* Added short ``-m`` flags for ``--model`` CLI option.
 * Introduced new ``--url`` (``-u``) and ``--api-key`` (``-a``) options for specifying the model API URL and API key directly via the CLI or environment variables (``OPENAI_API_BASE``, ``OPENAI_API_KEY``).
 * CLI now prioritizes values from command-line options, falling back to environment variables or ``.env`` file for ``model``, ``url``, and ``api-key``.
 * Implement ``FactlySettings`` class to manage model and inference settings, including support for CLI arguments, environment variables, and ``.env`` file.
+* Provide ability to set ``temperature``, ``top_p``, and ``max_tokens`` for the model via CLI arguments (``--temperature``, ``--top-p``, ``--max-tokens``).
 
 Trivial/Internal Changes
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Removed deprecated ``license`` key in favor of ``license-files`` key in ``pyproject.toml``, aligning with `PEP 639 <https://peps.python.org/pep-0639/#add-string-value-to-license-key>`_
 * Improved CLI performance by reorganizing imports and inplemented lazy loading of dependencies.
+* Rework logging to use ``factly.logger`` module, with ``DEBUG`` and ``INFO`` log levels, and ``logging.NullHandler`` for silent operation when disabled.
 
 Improved Documentation
 ^^^^^^^^^^^^^^^^^^^^^^
