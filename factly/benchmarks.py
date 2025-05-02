@@ -27,14 +27,14 @@ class MMLUBenchmark(MMLU):
         tasks: list[MMLUTask] | None = None,
         n_shots: int = 0,
         n_problems_per_task: int | None = None,
-        confinement_instructions: str | None = None,
         **kwargs,
     ):
+        constrained_prompt = "Provide ONLY the letter of your answer (A, B, C, or D)."
         super().__init__(
             tasks=tasks or list(MMLUTask),
             n_shots=n_shots,
             n_problems_per_task=n_problems_per_task,
-            confinement_instructions=confinement_instructions,
+            confinement_instructions=constrained_prompt,
             **kwargs,
         )
         # Initialize default concurrency context
@@ -373,12 +373,12 @@ def evaluate(
 
     Args:
         instructions: Path to YAML file with system instructions
+        settings: FactlySettings object containing model and inference settings
         tasks: List of MMLU tasks to evaluate (defaults to CS and Astronomy)
         workers: Number of concurrent workers for model evaluations
                 (default: auto-determined based on system resources)
         plot: Whether to generate a plot of the results (default: False)
         plot_path: Path to save the plot
             (default: ./outputs/factuality-<model>-t<count>.png)
-        settings: FactlySettings object containing model and inference settings
     """
     asyncio.run(_evaluate(instructions, settings, tasks, workers, plot, plot_path))

@@ -48,77 +48,59 @@ Common Global Options:
 Command Line Options for ``evaluate``
 -------------------------------------
 
-.. list-table::
-   :header-rows: 1
-   :widths: 30 50 20
 
-   * - Option
-     - Description
-     - Default
-   * - ``--instructions PATH``
-     - Path to YAML file with system instruction variants.
-     - ``./instructions.yaml``
-   * - ``-m NAME``, ``--model NAME``
-     - Model name to use for evaluation.
-     - ``OPENAI_MODEL`` from environment variables, ``.env`` file, or ``gpt-4o`` as a fallback.
-   * - ``-u URL``, ``--url URL``
-     - Model API URL to use for evaluation.
-     - ``OPENAI_API_BASE`` from environment variables, ``.env`` file, or unset.
-   * - ``-a KEY``, ``--api-key KEY``
-     - Model API key to use for evaluation.
-     - ``OPENAI_API_KEY`` from environment variables, ``.env`` file, or unset.
-   * - ``--temperature FLOAT``
-     - Controls randomness in token selection. For MMLU benchmarking, ``0.0`` (deterministic)
-       is the canonical setting to ensure reproducible results and measure raw model knowledge.
-       Higher values introduce randomness, which isn't suitable for standard benchmarking.
-     - ``0.0``
-   * - ``--top-p FLOAT``
-     - Nucleus sampling parameter that controls how much of the probability mass the model
-       samples from. For benchmarking, keep at ``1.0`` to disable nucleus sampling. Only
-       modify when exploring controlled randomness in outputs.
-     - ``1.0``
-   * - ``--max-tokens INTEGER``
-     - Maximum tokens per response. For standard MMLU with single-letter answers (A/B/C/D),
-       use ``1``. For structured outputs or when using system prompts that encourage reasoning,
-       use higher values (``256`` or more) and post-process to extract final answers.
-     - ``256``
-   * - ``--n-shots INTEGER``
-     - Number of examples for few-shot learning. Default set to 0 for zero-shot evaluation.
-       Increasing this value provides more demonstration examples in prompts to help the
-       model understand the task format.
-     - ``0``
-   * - ``--tasks TEXT`` (repeatable)
-     - MMLU task categories to evaluate (can be repeated)
-     - All tasks
-   * - ``-j``, ``--workers INTEGER``
-     - Maximum number of concurrent question evaluations
-     - Auto-detected based on system resources
-   * - ``--plot``
-     - Generate visualization plots
-     - -
-   * - ``--plot-path PATH``
-     - Path to save the plot
-     - ``./outputs/factuality-<model>-t<count>.png``
-   * - ``--verbose``
-     - Show detailed progress information during evaluation
-     - -
-   * - ``--help``
-     - Show help message and exit
-     - -
+--instructions file    Path to YAML file with system instruction variants.
+                       Default: ``./instructions.yaml``
+-m name, --model name  Model name to use for evaluation. Default: ``OPENAI_MODEL``
+                       from environment variables, ``.env`` file, or ``gpt-4o`` as a
+                       fallback.
+                       and long descriptions
+-u host, --url host    Model API URL to use for evaluation. Default: ``OPENAI_API_BASE``
+                       from environment variables, ``.env`` file, or unset.
+-a key, --api-key key  Model API key to use for evaluation. Default: ``OPENAI_API_KEY``
+                       from environment variables, ``.env`` file, or unset.
+-t float, --temperature float  Controls randomness in token selection. For MMLU benchmarking,
+                       ``0.0`` (deterministic) is the canonical setting to ensure
+                       reproducible results and measure raw model knowledge.
+                       Higher values introduce randomness, which isn't suitable for
+                       standard benchmarking. Default: ``0.0``.
+--top-p float, --top-p float  Nucleus sampling parameter that controls how much of the
+                       probability mass the model samples from. For benchmarking,
+                       keep at ``1.0`` to disable nucleus sampling. Only modify
+                       when exploring controlled randomness in outputs.
+                       Default: ``1.0``.
+--max-tokens int, --max-tokens int  Maximum tokens per response. For standard MMLU with
+                       single-letter answers (A/B/C/D), use ``1``. For structured
+                       outputs or when using system prompts that encourage reasoning,
+                       use higher values (``256`` or more) and post-process to extract
+                       final answers. Default: ``256``.
+--n-shots int, --n-shots int  Number of examples for few-shot learning. Default set to 0
+                       for zero-shot evaluation. Increasing this value provides
+                       more demonstration examples in prompts to help the model
+                       understand the task format. Default: ``0``.
+--tasks name, --tasks name  MMLU task categories to evaluate (can be repeated).
+                       Default: All tasks.
+-j int, --workers int  Maximum number of concurrent question evaluations. Default:
+                       Auto-detected based on system resources.
+--plot                 Generate visualization plots. Default: ``False``.
+--plot-path path       Path to save the plot.
+                       Default: ``./outputs/factuality-<model>-t<count>.png``.
+--verbose              Show detailed progress information during evaluation.
+                       Default: ``False``.
+--help                 Show help message and exit.
+
+.. note::
+
+   * For canonical MMLU evaluation (comparable to published benchmarks), use ``--n-shots 0`` with ``--max-tokens 1``
+   * When using few-shot learning (``--n-shots >0``), consider setting ``--max-tokens`` to a higher value (≥256) to allow the model to follow reasoning patterns from the examples
+   * If you must use ``--n-shots >0`` with ``--max-tokens 1``, ensure your few-shot examples only demonstrate single-token answers without reasoning
+   * For structured output (like JSON) or when using system prompts that encourage reasoning, always use ``--max-tokens >1`` regardless of the ``--n-shots`` value
+
 
 Command Line Options for ``list-tasks``
 ---------------------------------------
 
-.. list-table::
-   :header-rows: 1
-   :widths: 30 50 20
-
-   * - Option
-     - Description
-     - Default
-   * - ``--help``
-     - Show help message and exit
-     - -
+--help                 Show help message and exit.
 
 Advanced Usage
 ==============

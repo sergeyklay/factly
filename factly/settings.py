@@ -68,6 +68,12 @@ class InferenceSettings(BaseSettings):
         n_shots (int): Number of examples for few-shot learning. Default set to 0 for
             zero-shot evaluation. Increasing this value provides more demonstration
             examples in prompts to help the model understand the task format.
+
+    Note:
+        When using n_shots > 0, consider setting max_tokens > 1 to allow the model
+        to follow the reasoning patterns demonstrated in few-shot examples.
+        Setting max_tokens=1 with n_shots > 0 may cause the model to ignore the
+        reasoning pattern in examples and only output a token.
     """
 
     temperature: float = Field(default=0.0, ge=0.0, le=2.0)
@@ -89,7 +95,7 @@ class InferenceSettings(BaseSettings):
         return cls(**kwargs)
 
     @classmethod
-    def for_mmlu(cls) -> "InferenceSettings":
+    def for_mmlu(cls, n_shots: int = 0) -> "InferenceSettings":
         """
         Create inference settings configured for traditional MMLU benchmarking.
 
@@ -100,7 +106,8 @@ class InferenceSettings(BaseSettings):
             InferenceSettings: MMLU-optimized settings
             (temperature=0, top_p=1, max_tokens=1).
         """
-        return cls(temperature=0.0, top_p=1.0, max_tokens=1)
+        max_tokens = 256 if n_shots > 0 else 1
+        return cls(temperature=0.0, top_p=1.0, max_tokens=max_tokens, n_shots=n_shots)
 
 
 class FactlySettings(BaseSettings):
@@ -201,5 +208,14 @@ class FactlySettings(BaseSettings):
             model=_model,
             inference=_inference,
         )
+
+        if settings.inference.n_shots > 0 and settings.inference.max_tokens == 1:
+            import warnings
+
+            warnings.warn(
+                "Using n_shots > 0 with max_tokens=1 may produce inconsistent results. "
+                "Consider increasing max_tokens to allow for reasoning patterns "
+                "demonstrated in few-shot examples."
+            )
 
         return settings
