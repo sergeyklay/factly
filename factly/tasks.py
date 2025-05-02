@@ -1,5 +1,7 @@
 """MMLU task registry and management for Factly."""
 
+from __future__ import annotations
+
 import logging
 from enum import Enum
 from typing import Optional

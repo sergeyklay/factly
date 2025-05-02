@@ -1,6 +1,5 @@
 """Unit tests for the CLI module."""
 
-import os
 import subprocess
 import sys
 from unittest import mock
@@ -10,13 +9,6 @@ import pytest
 from click.testing import CliRunner
 
 from factly.cli import cli, get_copyright, get_version, main
-
-
-@pytest.fixture(autouse=True)
-def env_reset():
-    """Reset environment variables before each test."""
-    with mock.patch.dict(os.environ, {}, clear=True):
-        yield
 
 
 @pytest.fixture
@@ -106,27 +98,23 @@ def test_evaluate_help(runner):
     ],
 )
 def test_evaluate_model_option(
-    runner, args, model_arg, expected_model, mock_resolve_tasks
+    runner, args, model_arg, expected_model, mock_resolve_tasks, mock_env_vars
 ):
     """Test model option parsing in evaluate command."""
-    with mock.patch("os.getenv") as mock_getenv:
+    # Setup the environment variables for this test
+    env_vars = {"OPENAI_MODEL": "gpt-4o"} if model_arg is None else {}
+    mock_env_vars(env_vars)
 
-        def getenv_side_effect(key, default=None):
-            if key == "OPENAI_MODEL" and model_arg is None:
-                return "gpt-4o"
-            return default
+    with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
+        result = runner.invoke(cli, args)
 
-        mock_getenv.side_effect = getenv_side_effect
-
-        with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
-            result = runner.invoke(cli, args)
-
-            assert result.exit_code == 0
-            mock_evaluate.assert_called_once()
-            assert mock_evaluate.call_args.kwargs["model"] == expected_model
+        assert result.exit_code == 0
+        mock_evaluate.assert_called_once()
+        # Model is now part of settings object
+        assert mock_evaluate.call_args.kwargs["settings"].model.model == expected_model
 
 
-def test_evaluate_sets_api_values(runner, mock_resolve_tasks):
+def test_evaluate_sets_api_values(runner, mock_resolve_tasks, clean_api_env_vars):
     """Test that api-key and url options set the openai module values."""
     with mock.patch("factly.benchmarks.evaluate"):
         result = runner.invoke(
@@ -199,17 +187,19 @@ def test_evaluate_with_custom_instructions(
         ("gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo"),
     ],
 )
-def test_evaluate_model_precedence(runner, env_model, cli_model, expected_suffix):
+def test_evaluate_model_precedence(
+    runner, env_model, cli_model, expected_suffix, mock_env_vars, clean_environment
+):
     """Test precedence: CLI arg > env var > default for --model/-m."""
+    # Set up environment variables for this test
+    env_vars = {}
+    if env_model:
+        env_vars["OPENAI_MODEL"] = env_model
+    # Always set an API key to avoid auth errors
+    env_vars["OPENAI_API_KEY"] = "dummy-key"
+    mock_env_vars(env_vars)
+
     with (
-        mock.patch(
-            "os.getenv",
-            side_effect=lambda key, default=None: env_model
-            if key == "OPENAI_MODEL"
-            else "dummy-key"
-            if key == "OPENAI_API_KEY"
-            else default,
-        ),
         mock.patch("factly.tasks.resolve_tasks", return_value=[]),
         mock.patch("factly.benchmarks.evaluate"),
         mock.patch("openai.OpenAI"),
@@ -223,38 +213,42 @@ def test_evaluate_model_precedence(runner, env_model, cli_model, expected_suffix
         assert result.exit_code == 0
 
 
-def test_evaluate_api_env_vars(runner):
+def test_evaluate_api_env_vars(runner, mock_env_vars):
     """Test API environment variables are used correctly."""
-    api_key = "env-api-key"
-    api_base = "https://env-api-base.com/v1"
+    mock_env_vars(
+        {
+            "OPENAI_API_KEY": "env-api-key",
+            "OPENAI_API_BASE": "https://env-api-base.com/v1",
+        }
+    )
 
-    with mock.patch("os.getenv") as mock_getenv:
+    with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:
+        mock_resolve.return_value = []
 
-        def getenv_side_effect(key, default=None):
-            if key == "OPENAI_API_KEY":
-                return api_key
-            if key == "OPENAI_API_BASE":
-                return api_base
-            return default
+        with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
+            result = runner.invoke(cli, ["evaluate"])
 
-        mock_getenv.side_effect = getenv_side_effect
+            assert result.exit_code == 0
 
-        with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:
-            mock_resolve.return_value = []
-
-            with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
-                result = runner.invoke(cli, ["evaluate"])
-
-                assert result.exit_code == 0
-
-                call_kwargs = mock_evaluate.call_args[1]
-                assert "instructions" in call_kwargs
-                assert "model" in call_kwargs
-                assert "tasks" in call_kwargs
+            call_kwargs = mock_evaluate.call_args[1]
+            assert "instructions" in call_kwargs
+            assert "settings" in call_kwargs
+            # Check model settings are included
+            assert call_kwargs["settings"].model is not None
+            assert "tasks" in call_kwargs
 
 
-def test_evaluate_api_cli_overrides_env(runner):
+def test_evaluate_api_cli_overrides_env(runner, setup_api_env):
     """Test that CLI options override environment variables for API settings."""
+    # Set up environment variables first
+    setup_api_env(
+        {
+            "OPENAI_API_KEY": "env-api-key",
+            "OPENAI_API_BASE": "https://env-api-base.com/v1",
+        }
+    )
+
+    # CLI values should override environment values
     cli_api_key = "cli-api-key"
     cli_api_base = "https://cli-api-base.com/v1"
 

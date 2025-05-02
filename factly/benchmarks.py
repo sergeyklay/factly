@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 from pathlib import Path
@@ -14,6 +16,7 @@ from tqdm import tqdm
 
 from factly.models import FactlyGptModel
 from factly.resources import ResourceManager
+from factly.settings import FactlySettings
 
 logger = logging.getLogger(__name__)
 
@@ -273,15 +276,11 @@ async def _evaluate_model(
 
 async def _evaluate(
     instructions: Path,
-    model: str,
+    settings: FactlySettings,
     mmlu_tasks: list[MMLUTask] | None = None,
-    n_shots: int = 0,
     workers: int | None = None,
     plot: bool = False,
     plot_path: Path | None = None,
-    temperature: float = 0.0,
-    top_p: float = 1.0,
-    max_tokens: int = 1,
 ) -> None:
     """Asynchronously evaluate models with different prompts on the MMLU benchmark."""
     loaded_instructions = load_instructions(instructions)
@@ -297,10 +296,10 @@ async def _evaluate(
     )
 
     logger.info("Concurrency: %d concurrent question evaluations", concurrency)
-    logger.info("Model name: %s", model)
-    logger.info("Temperature: %.1f", temperature)
-    logger.info("Top-p: %.1f", top_p)
-    logger.info("Max tokens: %d", max_tokens)
+    logger.info("Model name: %s", settings.model.model)
+    logger.info("Temperature: %.1f", settings.inference.temperature)
+    logger.info("Top-p: %.1f", settings.inference.top_p)
+    logger.info("Max tokens: %d", settings.inference.max_tokens)
 
     # Initialize models with different instructions
     factly_models = []
@@ -308,14 +307,14 @@ async def _evaluate(
 
     for instruction in loaded_instructions:
         model_instance = FactlyGptModel(
-            model=model,
+            model=settings.model.model,
             system_prompt=instruction["system_prompt"],
             prompt_name=instruction["name"],
             base_url=openai.base_url,
             api_key=openai.api_key,
-            temperature=temperature,
-            top_p=top_p,
-            max_tokens=max_tokens,
+            temperature=settings.inference.temperature,
+            top_p=settings.inference.top_p,
+            max_tokens=settings.inference.max_tokens,
         )
         factly_models.append(model_instance)
         prompt_names.append(instruction["name"])
@@ -329,7 +328,12 @@ async def _evaluate(
             len(factly_models),
         )
 
-        score = await _evaluate_model(model_instance, mmlu_tasks, n_shots, workers)
+        score = await _evaluate_model(
+            model_instance,
+            mmlu_tasks,
+            settings.inference.n_shots,
+            workers,
+        )
         results.append((score, model_instance.prompt_name))
         logger.info(
             "Completed evaluation for prompt '%s': %.4f",
@@ -342,64 +346,39 @@ async def _evaluate(
         logger.info("Prompt '%s': %.4f", name, score)
 
     if plot and len(results) > 0:
-        try:
-            from factly.plots import generate_factuality_comparison_plot
+        from factly.plots import generate_factuality_comparison_plot
 
-            # Get task names for the plot footer
-            task_names = [task.name for task in mmlu_tasks] if mmlu_tasks else []
+        # Get task names for the plot footer
+        task_names = [task.name for task in mmlu_tasks] if mmlu_tasks else []
 
-            # Generate the plot with metadata, using the display model name
-            plot_file = generate_factuality_comparison_plot(
-                results=results,
-                model_name=factly_models[0].get_display_model_name(),
-                output_path=plot_path,
-                tasks=task_names,
-            )
-            logger.info("Generated factuality comparison plot: %s", plot_file)
-        except ImportError as e:
-            logger.error("Failed to generate plot: %s", e)
-            logger.error("Make sure matplotlib is installed: pip install matplotlib")
+        # Generate the plot with metadata, using the display model name
+        plot_file = generate_factuality_comparison_plot(
+            results=results,
+            model_name=factly_models[0].get_display_model_name(),
+            output_path=plot_path,
+            tasks=task_names,
+        )
+        logger.info("Generated factuality comparison plot: %s", plot_file)
 
 
 def evaluate(
     instructions: Path,
-    model: str,
+    settings: FactlySettings,
     tasks: list[MMLUTask] | None = None,
-    n_shots: int = 0,
     workers: int | None = None,
     plot: bool = False,
     plot_path: Path | None = None,
-    temperature: float = 0.0,
-    top_p: float = 1.0,
-    max_tokens: int = 1,
 ):
     """Evaluate models with different prompts on the MMLU benchmark.
 
     Args:
         instructions: Path to YAML file with system instructions
-        model: The LLM model to use
         tasks: List of MMLU tasks to evaluate (defaults to CS and Astronomy)
-        n_shots: Number of shots for few-shot learning (default: 0)
         workers: Number of concurrent workers for model evaluations
                 (default: auto-determined based on system resources)
         plot: Whether to generate a plot of the results (default: False)
         plot_path: Path to save the plot
             (default: ./outputs/factuality-<model>-t<count>.png)
-        temperature: Sampling temperature for inference (default: 0.0)
-        top_p: Nucleus sampling parameter (default: 1.0)
-        max_tokens: Maximum tokens per response (default: 1)
+        settings: FactlySettings object containing model and inference settings
     """
-    asyncio.run(
-        _evaluate(
-            instructions,
-            model,
-            tasks,
-            n_shots,
-            workers,
-            plot,
-            plot_path,
-            temperature,
-            top_p,
-            max_tokens,
-        )
-    )
+    asyncio.run(_evaluate(instructions, settings, tasks, workers, plot, plot_path))
