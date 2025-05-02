@@ -10,7 +10,7 @@ name = "factly-eval"
 description = "CLI tool to evaluate ChatGPT factuality on MMLU benchmark."
 license-files = ["LICENSE"]
 readme = "README.rst"
-version = "1.0.2"
+version = "1.1.0"
 requires-python = ">=3.12,<4"
 authors = [{ name = "Serghei Iakovlev", email = "oss@serghei.pl" }]
 dependencies = [

@@ -1,11 +1,12 @@
 """Factly CLI entrypoint."""
 
 import logging
-import os
 import sys
 from pathlib import Path
 
 import click
+
+from .logger import setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,6 @@ class RichGroup(click.Group):
 )
 def cli():
     """Entrypoint for factly CLI."""
-    pass
 
 
 @cli.command()
@@ -83,7 +83,7 @@ def cli():
     default=Path.cwd() / "instructions.yaml",
     help=(
         "Path to YAML file with system instruction variants. "
-        "Default is `instructions.yaml` in the current working directory."
+        "[default: `instructions.yaml` in the current working directory]"
     ),
 )
 @click.option(
@@ -91,14 +91,14 @@ def cli():
     "--model",
     type=str,
     default=None,
-    help="Model name to use for evaluation.",
+    help="Model name to use for evaluation. [default: gpt-4o]",
 )
 @click.option(
     "-u",
     "--url",
     type=str,
     default=None,
-    help="Model API URL to use for evaluation.",
+    help="Model API URL to use for evaluation. [default: https://api.openai.com/v1]",
 )
 @click.option(
     "-a",
@@ -108,10 +108,32 @@ def cli():
     help="Model API key to use for evaluation.",
 )
 @click.option(
+    "--temperature",
+    type=float,
+    default=0.0,
+    show_default=True,
+    help="Sampling temperature for model inference.",
+)
+@click.option(
+    "--top-p",
+    type=float,
+    default=1.0,
+    show_default=True,
+    help="Nucleus sampling parameter.",
+)
+@click.option(
+    "--max-tokens",
+    type=int,
+    default=256,
+    show_default=True,
+    help="Maximum number of tokens per response.",
+)
+@click.option(
     "--n-shots",
     type=int,
     default=0,
-    help="Number of shots for few-shot learning (default: 0).",
+    show_default=True,
+    help="Number of shots for few-shot learning.",
 )
 @click.option(
     "--tasks",
@@ -135,7 +157,7 @@ def cli():
     default=None,
     help=(
         "Maximum number of concurrent question evaluations. "
-        "(default: auto-determined by system resources)."
+        "[default: auto-determined by system resources]"
     ),
 )
 @click.option(
@@ -147,7 +169,7 @@ def cli():
     "--plot-path",
     type=click.Path(dir_okay=False, path_type=Path),
     default=None,
-    help="Path to save the plot (default: ./outputs/factuality-<model>-t<count>.png).",
+    help="Path to save the plot. [default: ./outputs/factuality-<model>-t<count>.png]",
 )
 def evaluate(
     instructions: Path,
@@ -156,6 +178,9 @@ def evaluate(
     model: str | None = None,
     url: str | None = None,
     api_key: str | None = None,
+    temperature: float = 0.0,
+    top_p: float = 1.0,
+    max_tokens: int = 1,
     tasks: list[str] | None = None,
     workers: int | None = None,
     plot: bool = False,
@@ -164,46 +189,62 @@ def evaluate(
     """Evaluate the model on the MMLU benchmark."""
     import openai
     from dotenv import load_dotenv
+    from pydantic import ValidationError
 
     from factly.benchmarks import evaluate as do_evaluate
+    from factly.settings import FactlySettings
 
     from .tasks import resolve_tasks
 
     load_dotenv(BASE_DIR / ".env")
-
-    url = url or os.getenv("OPENAI_API_BASE")
-    model = model or os.getenv("OPENAI_MODEL", "gpt-4o")
-
-    openai.api_key = api_key or os.getenv("OPENAI_API_KEY")
-    if url:
-        openai.base_url = url
+    setup_logging(verbose=verbose)
 
     try:
+        # Create settings with CLI parameters taking precedence
+        settings = FactlySettings.from_cli(
+            model=model,
+            api_key=api_key,
+            api_base=url,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+        )
+
+        # Configure OpenAI client from settings
+        openai.api_key = settings.model.api_key
+        if settings.model.api_base:
+            openai.base_url = settings.model.api_base
+
         # Convert None to empty list to satisfy type checking
         task_names = tasks if tasks is not None else []
 
         # Resolve task names to actual MMLUTask objects
         mmlu_tasks = resolve_tasks(task_names)
+        task_names = [t.name for t in mmlu_tasks]
 
-        logger.info(
-            "Evaluating %d tasks: %s",
-            len(mmlu_tasks),
-            ", ".join([t.name for t in mmlu_tasks]),
-        )
+        click.echo(f"Evaluating {len(mmlu_tasks)} tasks: {', '.join(task_names)}")
 
         do_evaluate(
             instructions=instructions,
-            model=model,
+            model=settings.model.model,
             tasks=mmlu_tasks,
             n_shots=n_shots,
             workers=workers,
-            verbose=verbose,
             plot=plot,
             plot_path=plot_path,
+            temperature=settings.inference.temperature,
+            top_p=settings.inference.top_p,
+            max_tokens=settings.inference.max_tokens,
         )
+    except ValidationError as e:
+        errors = e.errors()
+        for error in errors:
+            message = f"{error['loc'][0]}: {error['msg']}"
+            click.echo(message, err=True)
+        sys.exit(1)
     except ValueError as e:
-        logger.error("Error resolving tasks: %s", e, exc_info=True)
-        logger.info("Use 'factly list-tasks' to see available tasks")
+        click.echo(f"Error resolving tasks: {e}")
+        click.echo("Use 'factly list-tasks' to see available tasks", err=True)
         sys.exit(1)
 
 
