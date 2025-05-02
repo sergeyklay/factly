@@ -68,13 +68,19 @@ Command Line Options for ``evaluate``
      - Model API key to use for evaluation.
      - ``OPENAI_API_KEY`` from environment variables, ``.env`` file, or unset.
    * - ``--temperature FLOAT``
-     - Sampling temperature for model inference.
+     - Controls randomness in token selection. For MMLU benchmarking, ``0.0`` (deterministic)
+       is the canonical setting to ensure reproducible results and measure raw model knowledge.
+       Higher values introduce randomness, which isn't suitable for standard benchmarking.
      - ``0.0``
    * - ``--top-p FLOAT``
-     - Nucleus sampling parameter.
+     - Nucleus sampling parameter that controls how much of the probability mass the model
+       samples from. For benchmarking, keep at ``1.0`` to disable nucleus sampling. Only
+       modify when exploring controlled randomness in outputs.
      - ``1.0``
    * - ``--max-tokens INTEGER``
-     - Maximum number of tokens per response.
+     - Maximum tokens per response. For standard MMLU with single-letter answers (A/B/C/D),
+       use ``1``. For structured outputs or when using system prompts that encourage reasoning,
+       use higher values (``256`` or more) and post-process to extract final answers.
      - ``256``
    * - ``--tasks TEXT`` (repeatable)
      - MMLU task categories to evaluate (can be repeated)
