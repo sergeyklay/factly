@@ -24,6 +24,20 @@ if TYPE_CHECKING:
     from openai.types.chat import ChatCompletionMessageParam
 
 
+def get_actual_model_name(model_name: str) -> str:
+    """Get the actual model name.
+
+    Returns:
+        The actual model name
+    """
+    if "/" in model_name:
+        # For LiteLLM format "provider/model", extract just the model part
+        _, model_name = model_name.split("/", 1)
+        return model_name
+    # For direct provider models, return as is
+    return model_name
+
+
 class FactlyGptModel(GPTModel):
     """Factly GPT model."""
 
@@ -49,7 +63,7 @@ class FactlyGptModel(GPTModel):
             top_p: Nucleus sampling parameter between 0.0 and 1.0
             max_tokens: Maximum number of tokens to generate
         """
-        actual_model_name = self._get_actual_model_name(model)
+        actual_model_name = get_actual_model_name(model)
         super().__init__(actual_model_name, *args, **kwargs)
 
         self.model_name = model  # Redefine the model name
@@ -60,26 +74,13 @@ class FactlyGptModel(GPTModel):
         self.top_p = top_p
         self.max_tokens = max_tokens
 
-    def _create_messages(self, prompt: str) -> Iterable[ChatCompletionMessageParam]:
+    def create_messages(self, prompt: str) -> Iterable[ChatCompletionMessageParam]:
         """Create messages for the chat completion."""
         messages = []
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
         messages.append({"role": "user", "content": prompt})
         return messages
-
-    def _get_actual_model_name(self, model_name: str) -> str:
-        """Get the actual model name.
-
-        Returns:
-            The actual model name
-        """
-        if "/" in model_name:
-            # For LiteLLM format "provider/model", extract just the model part
-            _, model_name = model_name.split("/", 1)
-            return model_name
-        # For direct provider models, return as is
-        return model_name
 
     def get_display_model_name(self) -> str:
         """Get the display model name.
@@ -98,7 +99,7 @@ class FactlyGptModel(GPTModel):
         self, prompt: str, schema: BaseModel | None = None
     ) -> Union[str, dict, BaseModel]:
         """Generate a response from the model asynchronously."""
-        messages = self._create_messages(prompt)
+        messages = self.create_messages(prompt)
         client = self.load_model(async_mode=True)
 
         if schema:
