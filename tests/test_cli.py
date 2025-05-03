@@ -50,7 +50,7 @@ def test_help_option(runner):
     result = runner.invoke(cli, ["--help"])
     assert result.exit_code == 0
     assert "Usage:" in result.output
-    assert "evaluate" in result.output
+    assert "mmlu" in result.output
     assert "list-tasks" in result.output
 
 
@@ -73,9 +73,9 @@ def test_list_tasks_help(runner):
     assert "List all available MMLU tasks" in result.output
 
 
-def test_evaluate_help(runner):
-    """Test that the evaluate --help option prints help text."""
-    result = runner.invoke(cli, ["evaluate", "--help"])
+def test_mmlu_help(runner):
+    """Test that the mmlu --help option prints help text."""
+    result = runner.invoke(cli, ["mmlu", "--help"])
     assert result.exit_code == 0
     assert "Usage:" in result.output
     assert "-m, --model" in result.output
@@ -92,15 +92,15 @@ def test_evaluate_help(runner):
 @pytest.mark.parametrize(
     "args,model_arg,expected_model",
     [
-        (["evaluate"], None, "gpt-4o"),
-        (["evaluate", "--model", "gpt-4"], "gpt-4", "gpt-4"),
-        (["evaluate", "-m", "gpt-3.5-turbo"], "gpt-3.5-turbo", "gpt-3.5-turbo"),
+        (["mmlu"], None, "gpt-4o"),
+        (["mmlu", "--model", "gpt-4"], "gpt-4", "gpt-4"),
+        (["mmlu", "-m", "gpt-3.5-turbo"], "gpt-3.5-turbo", "gpt-3.5-turbo"),
     ],
 )
-def test_evaluate_model_option(
+def test_mmlu_model_option(
     runner, args, model_arg, expected_model, mock_resolve_tasks, mock_env_vars
 ):
-    """Test model option parsing in evaluate command."""
+    """Test model option parsing in mmlu command."""
     # Setup the environment variables for this test
     env_vars = {"OPENAI_MODEL": "gpt-4o"} if model_arg is None else {}
     mock_env_vars(env_vars)
@@ -114,25 +114,25 @@ def test_evaluate_model_option(
         assert mock_evaluate.call_args.kwargs["settings"].model.model == expected_model
 
 
-def test_evaluate_sets_api_values(runner, mock_resolve_tasks, clean_api_env_vars):
+def test_mmlu_sets_api_values(runner, mock_resolve_tasks, clean_api_env_vars):
     """Test that api-key and url options set the openai module values."""
     with mock.patch("factly.benchmarks.evaluate"):
         result = runner.invoke(
-            cli, ["evaluate", "-a", "test-api-key", "-u", "https://test-url.com/v1"]
+            cli, ["mmlu", "-a", "test-api-key", "-u", "https://test-url.com/v1"]
         )
 
         assert result.exit_code == 0
 
 
-def test_evaluate_task_resolution(runner, mock_tasks):
-    """Test task resolution in evaluate command."""
+def test_mmlu_task_resolution(runner, mock_tasks):
+    """Test task resolution in mmlu command."""
     task_names = ["mathematics", "physics"]
 
     with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:
         mock_resolve.return_value = mock_tasks
         with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
             result = runner.invoke(
-                cli, ["evaluate", "--tasks", task_names[0], "--tasks", task_names[1]]
+                cli, ["mmlu", "--tasks", task_names[0], "--tasks", task_names[1]]
             )
 
             assert result.exit_code == 0
@@ -141,38 +141,34 @@ def test_evaluate_task_resolution(runner, mock_tasks):
             assert mock_evaluate.call_args.kwargs["tasks"] == mock_tasks
 
 
-def test_evaluate_with_mock_tasks(runner, mock_tasks):
+def test_mmlu_with_mock_tasks(runner, mock_tasks):
     """Test evaluation with mock tasks."""
     with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:
         mock_resolve.return_value = mock_tasks
         with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
-            result = runner.invoke(cli, ["evaluate"])
+            result = runner.invoke(cli, ["mmlu"])
 
             assert result.exit_code == 0
             mock_evaluate.assert_called_once()
             assert mock_evaluate.call_args.kwargs["tasks"] == mock_tasks
 
 
-def test_evaluate_default_tasks(runner, mock_tasks):
+def test_mmlu_default_tasks(runner, mock_tasks):
     """Test that no task argument resolves to all tasks."""
     with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:
         mock_resolve.return_value = mock_tasks
         with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
-            result = runner.invoke(cli, ["evaluate"])
+            result = runner.invoke(cli, ["mmlu"])
 
             assert result.exit_code == 0
             assert len(mock_resolve.call_args.args[0]) == 0
             assert mock_evaluate.call_args.kwargs["tasks"] == mock_tasks
 
 
-def test_evaluate_with_custom_instructions(
-    runner, temp_instructions, mock_resolve_tasks
-):
+def test_mmlu_with_custom_instructions(runner, temp_instructions, mock_resolve_tasks):
     """Test using custom instructions file."""
     with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
-        result = runner.invoke(
-            cli, ["evaluate", "--instructions", str(temp_instructions)]
-        )
+        result = runner.invoke(cli, ["mmlu", "--instructions", str(temp_instructions)])
 
         assert result.exit_code == 0
         mock_evaluate.assert_called_once()
@@ -187,7 +183,7 @@ def test_evaluate_with_custom_instructions(
         ("gpt-4", "gpt-3.5-turbo", "gpt-3.5-turbo"),
     ],
 )
-def test_evaluate_model_precedence(
+def test_mmlu_model_precedence(
     runner, env_model, cli_model, expected_suffix, mock_env_vars, clean_environment
 ):
     """Test precedence: CLI arg > env var > default for --model/-m."""
@@ -205,7 +201,7 @@ def test_evaluate_model_precedence(
         mock.patch("openai.OpenAI"),
         mock.patch("dotenv.load_dotenv"),
     ):
-        args = ["evaluate"]
+        args = ["mmlu"]
         if cli_model:
             args += ["-m", cli_model]
         result = runner.invoke(cli, args)
@@ -213,7 +209,7 @@ def test_evaluate_model_precedence(
         assert result.exit_code == 0
 
 
-def test_evaluate_api_env_vars(runner, mock_env_vars):
+def test_mmlu_api_env_vars(runner, mock_env_vars):
     """Test API environment variables are used correctly."""
     mock_env_vars(
         {
@@ -226,7 +222,7 @@ def test_evaluate_api_env_vars(runner, mock_env_vars):
         mock_resolve.return_value = []
 
         with mock.patch("factly.benchmarks.evaluate") as mock_evaluate:
-            result = runner.invoke(cli, ["evaluate"])
+            result = runner.invoke(cli, ["mmlu"])
 
             assert result.exit_code == 0
 
@@ -238,7 +234,7 @@ def test_evaluate_api_env_vars(runner, mock_env_vars):
             assert "tasks" in call_kwargs
 
 
-def test_evaluate_api_cli_overrides_env(runner, setup_api_env):
+def test_mmlu_api_cli_overrides_env(runner, setup_api_env):
     """Test that CLI options override environment variables for API settings."""
     # Set up environment variables first
     setup_api_env(
@@ -256,9 +252,7 @@ def test_evaluate_api_cli_overrides_env(runner, setup_api_env):
         mock_resolve.return_value = []
 
         with mock.patch("factly.benchmarks.evaluate"):
-            result = runner.invoke(
-                cli, ["evaluate", "-a", cli_api_key, "-u", cli_api_base]
-            )
+            result = runner.invoke(cli, ["mmlu", "-a", cli_api_key, "-u", cli_api_base])
 
             assert result.exit_code == 0
 
