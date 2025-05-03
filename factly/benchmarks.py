@@ -14,7 +14,7 @@ from deepeval.benchmarks.schema import MultipleChoiceSchema
 from deepeval.dataset import Golden
 from tqdm import tqdm
 
-from factly.models import FactlyGptModel
+from factly.llms import FactlyGptModel
 from factly.resources import ResourceManager
 from factly.settings import FactlySettings
 
