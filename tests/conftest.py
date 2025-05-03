@@ -160,7 +160,7 @@ def isolate_settings_env(monkeypatch):
 @pytest.fixture
 def mock_resolve_tasks():
     """Mock the resolve_tasks function."""
-    with mock.patch("factly.cli.evaluate"):
+    with mock.patch("factly.cli.mmlu"):
         with mock.patch("factly.tasks.resolve_tasks") as mock_resolve:
             task1 = mock.MagicMock(spec=MMLUTask)
             task1.name = "mathematics"

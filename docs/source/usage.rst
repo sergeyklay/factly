@@ -15,13 +15,13 @@ Basic Usage
 .. code-block:: bash
 
    # Run factuality evaluation with default settings
-   factly evaluate
+   factly mmlu
 
    # Run evaluation and generate plots
-   factly evaluate --plot
+   factly mmlu --plot
 
    # Get help on all available options
-   factly evaluate --help
+   factly mmlu --help
 
    # List available MMLU tasks
    factly list-tasks
@@ -37,7 +37,7 @@ Factly provides the following commands:
 
 Main Commands:
 
-* ``evaluate``: Run factuality evaluation on MMLU benchmark
+* ``mmlu``: Run factuality evaluation on MMLU benchmark
 * ``list-tasks``: List all available MMLU tasks
 
 Common Global Options:
@@ -45,7 +45,7 @@ Common Global Options:
 * ``--help``: Show help message and exit
 * ``--version``: Show version and exit
 
-Command Line Options for ``evaluate``
+Command Line Options for ``mmlu``
 -------------------------------------
 
 
@@ -113,13 +113,13 @@ You can select specific MMLU tasks to evaluate:
 .. code-block:: bash
 
    # Evaluate specific model on selected MMLU tasks
-   factly evaluate --model gpt-4o --tasks mathematics --tasks high_school_us_history
+   factly mmlu --model gpt-4o --tasks mathematics --tasks high_school_us_history
 
    # Evaluate on STEM tasks only
-   factly evaluate --tasks STEM
+   factly mmlu --tasks STEM
 
    # Evaluate on business-related tasks
-   factly evaluate --tasks BUSINESS
+   factly mmlu --tasks BUSINESS
 
 Few-Shot Learning
 -----------------
@@ -129,13 +129,13 @@ Configure the number of examples provided for few-shot learning:
 .. code-block:: bash
 
    # Zero-shot evaluation (default)
-   factly evaluate --n-shots 0
+   factly mmlu --n-shots 0
 
    # 3-shot evaluation
-   factly evaluate --n-shots 3
+   factly mmlu --n-shots 3
 
    # 5-shot evaluation
-   factly evaluate --n-shots 5
+   factly mmlu --n-shots 5
 
 Performance Optimization
 ------------------------
@@ -148,10 +148,10 @@ parameter:
 .. code-block:: bash
 
    # Auto-determine optimal concurrency (default)
-   factly evaluate --tasks STEM
+   factly mmlu --tasks STEM
 
    # Set concurrency level explicitly (process 20 questions in parallel)
-   factly evaluate --tasks STEM --workers 20
+   factly mmlu --tasks STEM --workers 20
 
 The implementation uses ``asyncio`` and semaphores for controlled concurrency with automatic
 resource detection for optimal performance across different environments.
@@ -164,10 +164,10 @@ Factly supports different system instructions for prompt engineering experiments
 .. code-block:: bash
 
    # Use the default instruction from instructions.yaml in current directory
-   factly evaluate
+   factly mmlu
 
    # Use a custom instructions defined in ~/path/to/instructions.yaml file
-   factly evaluate --instructions ~/path/to/instructions.yaml
+   factly mmlu --instructions ~/path/to/instructions.yaml
 
 By default instructions should be defined in the ``instructions.yaml`` file in current directory.
 Each instruction should provide a different way to guide the model's behavior when responding to questions.
@@ -181,13 +181,13 @@ Basic Evaluation
 .. code-block:: bash
 
    # Run basic evaluation with default settings
-   factly evaluate
+   factly mmlu
 
    # Run evaluation and generate plots
-   factly evaluate --plot
+   factly mmlu --plot
 
    # Run verbose evaluation with plots
-   factly evaluate --verbose --plot
+   factly mmlu --verbose --plot
 
 Subject-Specific Evaluation
 ---------------------------
@@ -195,13 +195,13 @@ Subject-Specific Evaluation
 .. code-block:: bash
 
    # Evaluate mathematics knowledge
-   factly evaluate --tasks mathematics --n-shots 3 --plot
+   factly mmlu --tasks mathematics --n-shots 3 --plot
 
    # Evaluate humanities subjects
-   factly evaluate --tasks high_school_european_history --tasks high_school_us_history --plot
+   factly mmlu --tasks high_school_european_history --tasks high_school_us_history --plot
 
    # Evaluate computer science knowledge
-   factly evaluate --tasks computer_science --verbose --plot
+   factly mmlu --tasks computer_science --verbose --plot
 
 Customized Evaluation
 ---------------------
@@ -209,14 +209,14 @@ Customized Evaluation
 .. code-block:: bash
 
    # Customize API settings and system instruction
-   factly evaluate \
+   factly mmlu \
      -m gpt-4o-mini \
      -u https://your-proxy.example.com/v1 \
      -a your_api_key_here \
      --instructions ~/path/to/instructions.yaml
 
    # Customize model inference parameters
-   factly evaluate \
+   factly mmlu \
      --model gpt-4o \
      --temperature 0.7 \
      --top-p 0.95 \

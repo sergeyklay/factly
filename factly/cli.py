@@ -63,7 +63,7 @@ class RichGroup(click.Group):
 
 @click.group(
     cls=RichGroup,
-    help="CLI tool to evaluate ChatGPT factuality on MMLU benchmark.",
+    help="CLI tool to evaluate LLMs on MMLU benchmark.",
 )
 @click.version_option(
     version=get_version(),
@@ -173,7 +173,7 @@ def cli():
     default=None,
     help="Path to save the plot. [default: ./outputs/factuality-<model>-t<count>.png]",
 )
-def evaluate(
+def mmlu(
     instructions: Path,
     n_shots: int,
     verbose: bool,

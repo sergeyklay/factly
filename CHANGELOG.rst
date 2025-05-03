@@ -11,6 +11,11 @@ Backward incompatible (breaking) changes will only be introduced in major versio
 1.1.0 - 2025-05-??
 ------------------
 
+Breaking Changes
+^^^^^^^^^^^^^^^^
+
+* Changed CLI command from ``evaluate`` to ``mmlu`` to better reflect the purpose of the tool.
+
 Features
 ^^^^^^^^
 
