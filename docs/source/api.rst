@@ -12,13 +12,6 @@ The ``factly`` module
     :special-members:
     :no-undoc-members:
 
-The ``cli`` module
-------------------
-
-.. automodule:: factly.cli
-    :members:
-    :no-undoc-members:
-
 The ``__main__`` module
 -----------------------
 
@@ -26,17 +19,39 @@ The ``__main__`` module
     :members:
     :no-undoc-members:
 
+The ``factly.llms`` module
+==========================
+
+.. automodule:: factly.llms
+    :members:
+    :special-members:
+    :no-undoc-members:
+
+The ``factly.llms.base_model`` module
+-------------------------------------
+
+.. automodule:: factly.llms.base_model
+    :members:
+    :no-undoc-members:
+
+The ``factly.llms.openai_model`` module
+---------------------------------------
+
+.. automodule:: factly.llms.openai_model
+    :members:
+    :no-undoc-members:
+
+The ``cli`` module
+------------------
+
+.. automodule:: factly.cli
+    :members:
+    :no-undoc-members:
+
 The ``benchmarks`` module
 -------------------------
 
 .. automodule:: factly.benchmarks
-    :members:
-    :no-undoc-members:
-
-The ``models`` module
----------------------
-
-.. automodule:: factly.models
     :members:
     :no-undoc-members:
 
