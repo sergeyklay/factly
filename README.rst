@@ -31,14 +31,17 @@ Quick Start
 
 .. code-block:: bash
 
-   # Run factuality evaluation with default settings
-   factly evaluate
+   # Run MMLU evaluation with default settings
+   factly mmlu
 
-   # Run evaluation and generate plots
-   factly evaluate --plot
+   # Run MMLU evaluation and generate plots
+   factly mmlu --plot
 
    # Get help on all available options
-   factly evaluate --help
+   factly mmlu --help
+
+   # Get help on all available commands
+   factly --help
 
 
 That's it! The tool uses optimized default parameters and saves all outputs to the ``output`` directory.
