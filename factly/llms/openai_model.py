@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import Union
 
 from deepeval.models.llms import GPTModel
 from deepeval.models.llms.openai_model import (
@@ -18,27 +18,10 @@ from tenacity import (
     wait_exponential_jitter,
 )
 
-if TYPE_CHECKING:
-    from typing import Iterable
-
-    from openai.types.chat import ChatCompletionMessageParam
+from factly.llms.base_model import FactlyModelMixin
 
 
-def get_actual_model_name(model_name: str) -> str:
-    """Get the actual model name.
-
-    Returns:
-        The actual model name
-    """
-    if "/" in model_name:
-        # For LiteLLM format "provider/model", extract just the model part
-        _, model_name = model_name.split("/", 1)
-        return model_name
-    # For direct provider models, return as is
-    return model_name
-
-
-class FactlyGptModel(GPTModel):
+class FactlyGptModel(FactlyModelMixin, GPTModel):
     """Factly GPT model."""
 
     def __init__(
@@ -63,7 +46,7 @@ class FactlyGptModel(GPTModel):
             top_p: Nucleus sampling parameter between 0.0 and 1.0
             max_tokens: Maximum number of tokens to generate
         """
-        actual_model_name = get_actual_model_name(model)
+        actual_model_name = self.get_actual_model_name(model)
         super().__init__(actual_model_name, *args, **kwargs)
 
         self.model_name = model  # Redefine the model name
@@ -73,22 +56,6 @@ class FactlyGptModel(GPTModel):
         self.temperature = temperature
         self.top_p = top_p
         self.max_tokens = max_tokens
-
-    def create_messages(self, prompt: str) -> Iterable[ChatCompletionMessageParam]:
-        """Create messages for the chat completion."""
-        messages = []
-        if self.system_prompt:
-            messages.append({"role": "system", "content": self.system_prompt})
-        messages.append({"role": "user", "content": prompt})
-        return messages
-
-    def get_display_model_name(self) -> str:
-        """Get the display model name.
-
-        Returns:
-            The display model name
-        """
-        return self.actual_model_name
 
     @retry(
         wait=wait_exponential_jitter(initial=1, exp_base=2, jitter=2, max=10),
