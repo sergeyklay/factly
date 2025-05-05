@@ -8,7 +8,7 @@ Versions follow `Semantic Versioning <https://semver.org/>`_ (``<major>.<minor>.
 
 Backward incompatible (breaking) changes will only be introduced in major versions with advance notice in the **Deprecations** section of releases.
 
-1.1.0 - 2025-05-??
+2.0.0 - 2025-05-??
 ------------------
 
 Breaking Changes
