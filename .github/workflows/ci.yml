@@ -61,7 +61,7 @@ jobs:
           make ccov
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5.4.2
+        uses: codecov/codecov-action@v5.4.3
         if: success()
         with:
           fail_ci_if_error: false
